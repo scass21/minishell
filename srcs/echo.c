@@ -1,35 +1,36 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_strncmp.c                                       :+:      :+:    :+:   */
+/*   echo.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: scass <scass@student.21-school.ru>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2020/11/11 01:17:14 by scass             #+#    #+#             */
-/*   Updated: 2021/05/19 13:54:16 by scass            ###   ########.fr       */
+/*   Created: 2021/05/19 13:58:12 by scass             #+#    #+#             */
+/*   Updated: 2021/05/19 14:03:27 by scass            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "libft.h"
+#include "minishell.h"
 
-int	ft_strncmp(const char *s1, const char *s2, size_t n)
+int		our_echo(char **argv)
 {
-	if (n == 0)
-		return (0);
-	while (--n && *s1 == *s2 && *s1 != '\0' && *s2 != '\0')
-	{
-		s1++;
-		s2++;
-	}
-	return ((unsigned char)*s1 - (unsigned char)*s2);
-}
+	int		i;
+	int		n;
 
-int	ft_strcmp(const char *s1, const char *s2)
-{
-	while (*s1 == *s2 && *s1 != '\0' && *s2 != '\0')
+	i = 1;
+	n = 0;
+	if (!argv)
+		printf("\n");
+	if (argv[i] && ft_strcmp(argv[i], "-n") == 0)
+		n = 1;
+	while (argv[i])
 	{
-		s1++;
-		s2++;
+		printf("%s", argv[i]);
+		if (argv[i + 1])
+			printf(" ");
+		i++;
 	}
-	return ((unsigned char)*s1 - (unsigned char)*s2);
+	if (!n)
+		printf("\n");
+	return (0);	
 }
