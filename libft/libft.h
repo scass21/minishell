@@ -27,6 +27,7 @@ typedef struct s_list
 	struct s_list	*next;
 }					t_list;
 
+int		ft_strcmp(const char *s1, const char *s2);
 int		ft_hexlen(long long int n);
 int		ft_len(long long int n);
 void	*ft_memset(void *dest, int c, size_t len);
