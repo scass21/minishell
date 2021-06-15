@@ -20,13 +20,19 @@
 typedef struct          s_env
 {
     char                *key;
-    char                *value;
     struct s_env        *next;
 }                       t_env;
 
+typedef struct          s_token
+{
+    char                *word;
+    struct s_token      *next;
+}                       t_token;
 
 // int		our_echo(char **argv);
 int		our_echo(char *argument);
 int		our_pwd(void);
-void ft_error(int code);
+void    ft_error(int code);
+int our_env(char **env);
+int	our_cd(int argc, char *path);
 #endif

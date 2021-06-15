@@ -6,7 +6,7 @@
 /*   By: lkasandr <lkasandr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/05/19 13:58:12 by scass             #+#    #+#             */
-/*   Updated: 2021/06/02 18:01:00 by lkasandr         ###   ########.fr       */
+/*   Updated: 2021/06/14 18:40:44 by lkasandr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,17 +37,8 @@
 
 int		our_echo(char *argument)
 {
-	int		i;
-	int		n;
-
-	i = 1;
-	n = 0;
 	if (!argument)
 		printf("\n");
-	if (argument && ft_strcmp(argument, "-n") == 0)
-		n = 1;
 	printf("%s", argument);
-	if (!n)
-		printf("\n");
 	return (0);	
 }
