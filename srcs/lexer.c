@@ -413,9 +413,11 @@ int main(int argv, char **argc, char **envp)
 {
     char *str;
     t_token *token;
+    t_shell		t_sh;
 
-    signal(SIGINT, our_sig_proc);
+	signal(SIGINT, our_sig_proc);
 	signal(SIGQUIT, our_sig_proc);
+    init_mini(&t_sh);
     while (1)
     {
         token = (t_token*)malloc(sizeof(t_token));
