@@ -32,43 +32,6 @@ static char *copy_str_without_quotes(char *str, int j, int i)
     return(tmp);
 }
 
-// static char *process_slash(char *str, int *i)                            //для обработки слэша
-// {
-//     char *tmp;
-//     int j;
-//     int k;
-
-//     tmp = NULL;
-//     j = 0;
-//     k = 0;
-//     tmp = (char *)malloc(sizeof(char) * ft_strlen(str));
-//     if (!tmp)
-//         ft_error(1);
-//     while(str[j] && (j != *i))
-//     {
-//         tmp[k] = str[j];
-//         k++;
-//         j++;
-//     }
-//     j = *i + 1;
-//     if (!str[j])
-//     {
-//         ft_free(tmp);
-//         printf("minitoken: missing slash.\n");
-//         return("\0");
-//     }
-//     while(str[j])
-//     {
-//         tmp[k] = str[j];
-//         j++;
-//         k++;
-//     }
-//     tmp[k] = '\0';
-//     ft_free(str);
-//     return (tmp);
-// }
-
-
 static char *get_key(char *str, int j, int i)
 {
     char *tmp1;
@@ -85,34 +48,36 @@ static char *get_key(char *str, int j, int i)
     return (tmp2);
 }
 
-static char *get_second_tmp(char *str, int j, int i, char **envp)
+static char *get_second_tmp(char *str, int j, int i, t_store *env)
 {
     char *tmp;
     int len;
     int flag;
-    int k;
+    t_store *p;
+    
 
     tmp = get_key(str, j, i);
     len = ft_strlen(tmp);
     flag = 0;
-    k = 0;
-    while(envp[k])
+    // k = 0;
+    p = env;
+    while(p != NULL)
     {
-        if (!ft_strncmp(envp[k], tmp, len))
+        if (!ft_strncmp(p->word, tmp, len))
         {
             free(tmp);
-            tmp = ft_substr(envp[k], len, ft_strlen(envp[k]) - len);
+            tmp = ft_substr(p->word, len, ft_strlen(p->word) - len);
             flag = 1;
             break;
         }
-        k++;
+        p = p->next;
     }
     if (flag == 0)
         tmp = "\0";
     return(tmp);
 }
 
-static char *process_dollar(char *str, int *i, char **envp)
+char *process_dollar(char *str, int *i, t_store *env)
 {
     int j;
     char *tmp1;
@@ -130,15 +95,14 @@ static char *process_dollar(char *str, int *i, char **envp)
         (*i)++;
     }
     tmp1 = ft_substr(str, 0, j);
-    tmp2 = get_second_tmp(str, j, *i, envp);
+    tmp2 = get_second_tmp(str, j, *i, env);
     tmp3 = ft_substr(str, *i, ft_strlen(str));
     tmp2 = ft_strjoin(tmp1, tmp2);
     str = ft_strjoin(tmp2, tmp3);
     return (str);
-    
 }
 
-static char *double_quotes(char *str, int *i, char **envp)
+char *double_quotes(char *str, int *i, t_store *env)
 {
     int j;
     char *tmp;
@@ -148,32 +112,22 @@ static char *double_quotes(char *str, int *i, char **envp)
     (*i)++;
     while(str[*i])
     {
-        // if (str[*i] == '\\' && str[*i + 1] == '\\')                    //для обработки слэша
-        //     str = process_slash(str, i);
-        // if (str[*i] == '\\' && str[*i + 1] == '\"')
-        // {
-        //     str = process_slash(str, i);
-        //     (*i)++;
-        // }
-        // if (str[*i] == '\\' && str[*i + 1] == '$')
-        //     str = process_slash(str, i);
         if (str[*i] == '$')
-            str = process_dollar(str, i, envp);
+            str = process_dollar(str, i, env);
         if (str[*i] == '\"')
             break;
         (*i)++;
     }
     if (*i == ft_strlen(str))
     {
-        printf("minitoken: missing second quote.\n");
+        printf("minishell: missing second quote.");
         return("\0");
     }
     tmp = copy_str_without_quotes(str, j, *i);
-    // ft_free(str);
     return(tmp);
 }
 
-static char *single_quotes(char *str, int *i)
+char *single_quotes(char *str, int *i)
 {
     int j;
     char *tmp;
@@ -189,7 +143,7 @@ static char *single_quotes(char *str, int *i)
     }
     if (*i == ft_strlen(str))
     {
-        printf("minitoken: missing second quote.\n");
+        printf("minishell: missing second quote.");
         return ("\0");
     }
     tmp = copy_str_without_quotes(str, j, *i);
@@ -208,12 +162,12 @@ static char *str_without_space(char *str, int j, int i)
     return(tmp1);
 }
 
-t_token *add_node(t_token *token, char *str, int i)
+t_store *add_node(t_store *token, char *str, int i)
 {
-    t_token *temp;
-    t_token *p;
+    t_store *temp;
+    t_store *p;
 
-    temp = (t_token *)malloc(sizeof(t_token));
+    temp = (t_store *)malloc(sizeof(t_store));
     if (!temp)
         ft_error(1);
     p = token->next;
@@ -244,10 +198,8 @@ static char *process_space(char *str, int i)
     return (tmp);
 }
 
-static int parser(char *str, char **envp, t_token *token)
+static int parser(char *str, t_store *env, t_store *token)
 {
-    //           "" '' $ | > >> < <<
-
     int i;
     int flag;
 
@@ -264,12 +216,12 @@ static int parser(char *str, char **envp, t_token *token)
         }
         if (str[i] == '\"')
         {
-            str = double_quotes(str, &i, envp);
+            str = double_quotes(str, &i, env);
             i = i - 2;
         }
         if (str[i] == '$')
         {
-            str = process_dollar(str, &i, envp);
+            str = process_dollar(str, &i, env);
             if (!str)
                 return (-1);
         }
@@ -285,6 +237,8 @@ static int parser(char *str, char **envp, t_token *token)
                 token = add_node(token, str, i);
             while(str[i] == ' ' || str[i] == '\t')
                 i++;
+            if (i == ft_strlen(str))
+                return (0);
             str = ft_substr(str, i, ft_strlen(str) - i);
             i = -1;
         }
@@ -301,16 +255,16 @@ static int parser(char *str, char **envp, t_token *token)
     return (0);
 }
 
-static void init_struct_token(t_token *token)
+void init_struct_store(t_store *token)
 {
     
     token->word = NULL;
     token->next = NULL;
 }
 
-static int count_argument(t_token *token)
+static int count_argument(t_store *token)
 {
-    t_token *p;
+    t_store *p;
     int count;
 
     p = token;
@@ -320,12 +274,22 @@ static int count_argument(t_token *token)
         count++;
         p = p->next;
     }
-    return (count - 1);
+    return (count);
 }
 
-static int execute_command(char **envp, t_token *token)
+t_store *add_node_begin(char *str, t_store *token) 
 {
-    t_token *p;
+    t_store *temp;
+
+    temp = (t_store *)malloc(sizeof(t_store)); 
+    temp->word = ft_strdup(str);
+    temp->next = token;
+    return (temp);
+}
+
+static int execute_command(t_store *env, t_store * export, t_store *token)
+{
+    t_store *p;
     int n_flag;
     int count;
 
@@ -356,12 +320,15 @@ static int execute_command(char **envp, t_token *token)
     else if (ft_strcmp(token->word, "cd") == 0)
     {
         p = token->next;
-        our_cd(count, p->word);
+        if (count != 1)
+            our_cd(count, p->word);
+        else
+            our_cd(count, NULL);
     }
-    // else if (ft_strcmp(token->word, "export") == 0)
-    //     our_export();
-    // else if (ft_strcmp(token->word, "unset") == 0)
-    //     our_unset();
+    else if (ft_strcmp(token->word, "export") == 0)
+        our_export(env, export, token);
+    else if (ft_strcmp(token->word, "unset") == 0)
+        our_unset(env, export, token);
     else if (ft_strcmp(token->word, "env") == 0)
     {
         p = token->next;
@@ -370,18 +337,16 @@ static int execute_command(char **envp, t_token *token)
             printf("env: %s: No such file or directory\n", p->word);
             return (0);
         }
-        our_env(envp);
+        our_env(env);
     }
-    // else if (ft_strcmp(token->word, "exit") == 0)
-    //     our_exit();
     else
         printf("minishell: %s: command not found\n", token->word);
     return (0);
 }
 
-static void free_struct(t_token *token)
+static void free_struct(t_store *token)
 {
-    t_token *p;
+    t_store *p;
 
     while(token != NULL)
     {
@@ -391,46 +356,103 @@ static void free_struct(t_token *token)
     }
 }
 
-void	our_sig_proc(int sig)
+t_store *add_node_env(t_store *env, char *str)
 {
-	if (sig == SIGINT)
-	{
-		write(1, "\nminishell: ", 12);
-		if (t_sh.fork_status == 0)
-			t_sh.exit_code = 1;				// value for $?
-		else
-			t_sh.exit_code = 130;
-	}
-	else if (sig == SIGQUIT)
-	{
-		write(1, "\nminishell: ", 12);
-		t_sh.exit_code = 131;
+    t_store *temp;
+    t_store *p;
 
-	}
+    temp = (t_store *)malloc(sizeof(t_store));
+    if (!temp)
+        ft_error(1);
+    p = env->next;
+    env->next = temp;
+    temp->word = ft_strdup(str);
+    if (!temp->word)
+        ft_error(1);
+    temp->next = p;
+    return (env);
+}
+
+static void fill_struct_env(char **envp, t_store *env)
+{
+    int i;
+
+    i = 0;
+    while(envp[i])
+    {
+        if (!env->word)
+        {
+            env->word = ft_strdup(envp[i]);
+            if (!env->word)
+                ft_error(1);
+        }
+        else
+            env = add_node_env(env, envp[i]);
+        i++;
+    }
+}
+
+static void fill_struct_export(t_store *export, t_store *env)
+{
+    t_store *temp_env;
+
+    temp_env = env;
+    while(temp_env)
+    {
+        if (!export->word)
+        {
+            export->word = ft_strdup(temp_env->word);
+            if (!export->word)
+                ft_error(1);
+        }
+        else
+            export = add_node_env(export, temp_env->word);
+        temp_env = temp_env->next;
+    }
+
+    // t_store *p;
+    // p = export;
+    // while(p != NULL)
+    // {
+    //     printf("%s\n", p->word);
+    //     p = p->next;
+    // }
+    
 }
 
 int main(int argv, char **argc, char **envp)
 {
     char *str;
-    t_token *token;
-    t_shell		t_sh;
+    t_store *token;
+    t_store *env;
+    t_store *export;
+    
+    
+    env = (t_store *)malloc(sizeof(t_store));
+    if (!env)
+        ft_error(1);
+    init_struct_store(env);
+    fill_struct_env(envp, env);
 
-	signal(SIGINT, our_sig_proc);
-	signal(SIGQUIT, our_sig_proc);
-    init_mini(&t_sh);
+    export = (t_store *)malloc(sizeof(t_store));
+    if (!export)
+        ft_error(1);
+    init_struct_store(export);
+    fill_struct_export(export, env);
+
     while (1)
     {
-        token = (t_token*)malloc(sizeof(t_token));
+        token = (t_store *)malloc(sizeof(t_store));
         if (!token)
             ft_error(1);
         str = NULL;
-        init_struct_token(token);
+        init_struct_store(token);
         str = readline("minishell$ ");
-        parser(str, envp, token);
+        parser(str, env, token);
         free(str);
-        execute_command(envp, token);
+        execute_command(env, export, token);
         free_struct(token);
     }
+    free_struct(env);
     return (0);
-
 }

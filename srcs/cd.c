@@ -2,6 +2,9 @@
 
 int	our_cd(int argc, char *path)			//argc - количество аргументов для cd
 {
+	char *r_path;
+
+	r_path = NULL;
 	if (argc == 1)
 	{
 		path = getenv("HOME");
@@ -10,6 +13,13 @@ int	our_cd(int argc, char *path)			//argc - количество аргумен�
 	}
 	if (argc == 2)	
 	{
+		if (ft_strncmp(path, "~", 1) == 0)
+		{
+			path++;
+			r_path = ft_strdup(getenv("HOME"));
+			r_path = ft_strjoin(r_path, path);
+			path = r_path;
+		}
 		if (chdir(path) < 0)
 			printf("%s\n", strerror(errno));
 	}
