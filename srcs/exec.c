@@ -32,6 +32,7 @@ int		exec_bin(t_store *token)
 	char	*path;
 	char	**arg;
 
+	arg = NULL;
 	arg = make_arg(token, arg);
 	path = ft_strdup("/usr/bin/");
 	path = ft_strjoin(path, arg[0]);
