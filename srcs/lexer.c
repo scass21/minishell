@@ -295,6 +295,11 @@ static int execute_command(t_store *env, t_store * export, t_store *token)
 
     n_flag = 0;
     count = count_argument(token);
+    // if (ft_strcmp(token->word, "\4"))
+    // {
+    //     printf("exit\n");
+    //     exit(0);
+    // }
     if (ft_strcmp(token->word, "echo") == 0)
     {
         p = token->next;
@@ -304,6 +309,11 @@ static int execute_command(t_store *env, t_store * export, t_store *token)
         {
             p = p->next;
             n_flag = 1;
+        }
+        if (ft_strcmp(p->word, "$?") == 0)
+        {
+            printf("%d", t_sh.exit_code);
+            return (0);
         }
         while(p != NULL)
         {
@@ -339,8 +349,14 @@ static int execute_command(t_store *env, t_store * export, t_store *token)
         }
         our_env(env);
     }
+    else if (ft_strcmp(token->word, "\n") == 0)
+    {
+        write(1, "\n", 1);
+    }
     else
-        printf("minishell: %s: command not found\n", token->word);
+    {
+        exec_bin(token);
+    }
     return (0);
 }
 
@@ -349,11 +365,12 @@ static void free_struct(t_store *token)
     t_store *p;
 
     while(token != NULL)
-    {
-        p = token;
-        token = token->next;
-        free(p);
-    }
+        {
+            p = token;
+            token = token->next;
+            if (p)
+                free(p);
+        }
 }
 
 t_store *add_node_env(t_store *env, char *str)
@@ -420,6 +437,20 @@ static void fill_struct_export(t_store *export, t_store *env)
     
 }
 
+void	init_mini()
+{
+	t_sh.exit_code = 0;
+	t_sh.fork_status = 0;
+	// t_sh->path = NULL;
+	// t_sh->str = NULL;
+	// ft_bzero(t_sh->str, ft_strlen(t_sh->str));
+	// t_sh->col = 0;
+	// t_sh->row = 0;
+	// t_sh->win_col = 0;
+	// t_sh->win_row = 0;
+
+}
+
 int main(int argv, char **argc, char **envp)
 {
     char *str;
@@ -427,7 +458,7 @@ int main(int argv, char **argc, char **envp)
     t_store *env;
     t_store *export;
     
-    
+    init_mini();
     env = (t_store *)malloc(sizeof(t_store));
     if (!env)
         ft_error(1);
@@ -439,7 +470,8 @@ int main(int argv, char **argc, char **envp)
         ft_error(1);
     init_struct_store(export);
     fill_struct_export(export, env);
-
+    signal(SIGINT, our_sig_proc);
+	signal(SIGQUIT, our_sig_proc);
     while (1)
     {
         token = (t_store *)malloc(sizeof(t_store));
