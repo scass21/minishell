@@ -303,8 +303,8 @@ static int execute_command(t_env *env, t_env * export, t_store *token)
         write(1, "\n", 1);
     }
     else
-        exec_bin(token);
-        // printf("exec_bin on\n");
+        // exec_bin(token);
+        printf("exec_bin on\n");
     return (0);
 }
 
@@ -425,8 +425,8 @@ int main(int argv, char **argc, char **envp)
         ft_error(1);
     init_struct_env(export);
     fill_struct_env(envp, export);
-    signal(SIGINT, our_sig_proc);
-	signal(SIGQUIT, our_sig_proc);
+    // signal(SIGINT, our_sig_proc);
+	// signal(SIGQUIT, our_sig_proc);
     while (1)
     {
         token = (t_store *)malloc(sizeof(t_store));
@@ -435,6 +435,7 @@ int main(int argv, char **argc, char **envp)
         str = NULL;
         init_struct_store(token);
         str = readline("minishell$ ");
+        add_history(str);
         parser(str, env, token);
         free(str);
         execute_command(env, export, token);
