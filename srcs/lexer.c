@@ -280,9 +280,9 @@ static int execute_command(t_env *env, t_env * export, t_store *token)
     {
         p = token->next;
         if (count != 1)
-            our_cd(count, p->word);
+            our_cd(count, p->word, env, export);
         else
-            our_cd(count, NULL);
+            our_cd(count, NULL, env, export);
     }
     else if (ft_strcmp(token->word, "export") == 0)
         our_export(env, export, token);
@@ -304,6 +304,7 @@ static int execute_command(t_env *env, t_env * export, t_store *token)
     }
     else
         exec_bin(token);
+        // printf("exec_bin on\n");
     return (0);
 }
 
@@ -439,6 +440,6 @@ int main(int argv, char **argc, char **envp)
         execute_command(env, export, token);
         free_struct_store(token);
     }
-    free_struct(env); // прописать перед всеми выходами
+    // free_struct(env); // прописать перед всеми выходами
     return (0);
 }
