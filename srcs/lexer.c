@@ -32,7 +32,7 @@ static char *copy_str_without_quotes(char *str, int j, int i)
     return(tmp);
 }
 
-static char *get_key(char *str, int j, int i)
+static char *get_tmp(char *str, int j, int i)
 {
     char *tmp1;
     char *tmp2;
@@ -42,31 +42,27 @@ static char *get_key(char *str, int j, int i)
     tmp1 = ft_substr(str, j + 1, i - j - 1);
     if (!tmp1)
         ft_error(1);
-    tmp2 = ft_strjoin(tmp1, "=");
-    if (!tmp2)
-        ft_error(1);
-    return (tmp2);
+    return (tmp1);
 }
 
-static char *get_second_tmp(char *str, int j, int i, t_store *env)
+static char *get_second_tmp(char *str, int j, int i, t_env *env)
 {
     char *tmp;
     int len;
     int flag;
-    t_store *p;
+    t_env *p;
     
 
-    tmp = get_key(str, j, i);
+    tmp = get_tmp(str, j, i);
     len = ft_strlen(tmp);
     flag = 0;
-    // k = 0;
     p = env;
     while(p != NULL)
     {
-        if (!ft_strncmp(p->word, tmp, len))
+        if (!ft_strcmp(p->key, tmp))
         {
             free(tmp);
-            tmp = ft_substr(p->word, len, ft_strlen(p->word) - len);
+            tmp = ft_strdup(p->value);
             flag = 1;
             break;
         }
@@ -77,7 +73,7 @@ static char *get_second_tmp(char *str, int j, int i, t_store *env)
     return(tmp);
 }
 
-char *process_dollar(char *str, int *i, t_store *env)
+char *process_dollar(char *str, int *i, t_env *env)
 {
     int j;
     char *tmp1;
@@ -102,7 +98,7 @@ char *process_dollar(char *str, int *i, t_store *env)
     return (str);
 }
 
-char *double_quotes(char *str, int *i, t_store *env)
+char *double_quotes(char *str, int *i, t_env *env)
 {
     int j;
     char *tmp;
@@ -151,18 +147,7 @@ char *single_quotes(char *str, int *i)
     return(tmp);
 }
 
-static char *str_without_space(char *str, int j, int i)
-{
-    char *tmp1;
-    char *tmp2;
-
-    tmp1 = ft_substr(str, 0, j + 1);
-    tmp2 = ft_substr(str, i, ft_strlen(str));
-    tmp1 = ft_strjoin(tmp1, tmp2);
-    return(tmp1);
-}
-
-t_store *add_node(t_store *token, char *str, int i)
+t_store *add_node_token(t_store *token, char *str, int i)
 {
     t_store *temp;
     t_store *p;
@@ -179,32 +164,11 @@ t_store *add_node(t_store *token, char *str, int i)
     return (temp);
 }
 
-static char *process_space(char *str, int i)
-{
-    int j;
-    char *tmp;
-
-    j = i;
-    i++;
-    if (!str[i])
-        return (str);
-    while(str[i] == ' ' || str[i] == '\t')
-        i++;
-    if (j + 1 == i)
-    {
-        return(str);
-    }
-    tmp = str_without_space(str, j, i);
-    return (tmp);
-}
-
-static int parser(char *str, t_store *env, t_store *token)
+static int parser(char *str, t_env *env, t_store *token)
 {
     int i;
-    int flag;
 
     i = 0;
-    flag = 0;
     while(*str == ' ' || *str == '\t')
         str++;
     while(str[i])
@@ -234,7 +198,7 @@ static int parser(char *str, t_store *env, t_store *token)
                     ft_error(1);
             }
             else
-                token = add_node(token, str, i);
+                token = add_node_token(token, str, i);
             while(str[i] == ' ' || str[i] == '\t')
                 i++;
             if (i == ft_strlen(str))
@@ -251,7 +215,7 @@ static int parser(char *str, t_store *env, t_store *token)
             ft_error(1);
     }
     else
-        token = add_node(token, str, ft_strlen(str));
+        token = add_node_token(token, str, ft_strlen(str));
     return (0);
 }
 
@@ -277,17 +241,7 @@ static int count_argument(t_store *token)
     return (count);
 }
 
-t_store *add_node_begin(char *str, t_store *token) 
-{
-    t_store *temp;
-
-    temp = (t_store *)malloc(sizeof(t_store)); 
-    temp->word = ft_strdup(str);
-    temp->next = token;
-    return (temp);
-}
-
-static int execute_command(t_store *env, t_store * export, t_store *token)
+static int execute_command(t_env *env, t_env * export, t_store *token)
 {
     t_store *p;
     int n_flag;
@@ -295,11 +249,6 @@ static int execute_command(t_store *env, t_store * export, t_store *token)
 
     n_flag = 0;
     count = count_argument(token);
-    // if (ft_strcmp(token->word, "\4"))
-    // {
-    //     printf("exit\n");
-    //     exit(0);
-    // }
     if (ft_strcmp(token->word, "echo") == 0)
     {
         p = token->next;
@@ -354,16 +303,13 @@ static int execute_command(t_store *env, t_store * export, t_store *token)
         write(1, "\n", 1);
     }
     else
-    {
         exec_bin(token);
-    }
     return (0);
 }
 
-static void free_struct(t_store *token)
+static void free_struct_store(t_store *token)
 {
     t_store *p;
-
     while(token != NULL)
         {
             p = token;
@@ -373,68 +319,68 @@ static void free_struct(t_store *token)
         }
 }
 
-t_store *add_node_env(t_store *env, char *str)
+t_env *add_node_env(t_env *env, char *key, char *value)
 {
-    t_store *temp;
-    t_store *p;
+    t_env *temp;
+    t_env *p;
 
-    temp = (t_store *)malloc(sizeof(t_store));
+    temp = (t_env *)malloc(sizeof(t_env));
     if (!temp)
         ft_error(1);
     p = env->next;
     env->next = temp;
-    temp->word = ft_strdup(str);
-    if (!temp->word)
+    temp->key = ft_strdup(key);
+    if (!temp->key)
         ft_error(1);
+    if (value)
+    {
+        temp->value = ft_strdup(value);
+        if (!temp->value)
+            ft_error(1);
+    }
+    else
+        temp->value = "\0";
     temp->next = p;
     return (env);
 }
 
-static void fill_struct_env(char **envp, t_store *env)
+static void fill_struct_env(char **envp, t_env *env)
 {
     int i;
+    char *key;
+    char *value;
 
     i = 0;
     while(envp[i])
     {
-        if (!env->word)
+        if (ft_strchr(envp[i], '='))
         {
-            env->word = ft_strdup(envp[i]);
-            if (!env->word)
-                ft_error(1);
+            key = get_key(envp[i]);
+            value = get_value(envp[i]);
         }
         else
-            env = add_node_env(env, envp[i]);
+        {
+            key = ft_strdup(envp[i]);
+            if (!key)
+                ft_error(1);
+            value = NULL;
+        }
+        if (!env->key)
+        {
+            env->key = ft_strdup(key);
+            if (!env->key)
+                ft_error(1);
+            if (value)
+            {
+                env->value = ft_strdup(value);
+                if (!env->value)
+                    ft_error(1);
+            }
+        }
+        else
+            env = add_node_env(env, key, value);
         i++;
     }
-}
-
-static void fill_struct_export(t_store *export, t_store *env)
-{
-    t_store *temp_env;
-
-    temp_env = env;
-    while(temp_env)
-    {
-        if (!export->word)
-        {
-            export->word = ft_strdup(temp_env->word);
-            if (!export->word)
-                ft_error(1);
-        }
-        else
-            export = add_node_env(export, temp_env->word);
-        temp_env = temp_env->next;
-    }
-
-    // t_store *p;
-    // p = export;
-    // while(p != NULL)
-    // {
-    //     printf("%s\n", p->word);
-    //     p = p->next;
-    // }
-    
 }
 
 void	init_mini()
@@ -451,25 +397,33 @@ void	init_mini()
 
 }
 
+static void init_struct_env(t_env *env)
+{
+    env->key = NULL;
+    env->value = NULL;
+    env->next = NULL;
+}
+
 int main(int argv, char **argc, char **envp)
 {
     char *str;
     t_store *token;
-    t_store *env;
-    t_store *export;
+    t_env *env;
+    t_env *export;
     
     init_mini();
-    env = (t_store *)malloc(sizeof(t_store));
+    env = (t_env *)malloc(sizeof(t_env));
     if (!env)
         ft_error(1);
-    init_struct_store(env);
+    init_struct_env(env);
     fill_struct_env(envp, env);
 
-    export = (t_store *)malloc(sizeof(t_store));
+
+    export = (t_env *)malloc(sizeof(t_env));
     if (!export)
         ft_error(1);
-    init_struct_store(export);
-    fill_struct_export(export, env);
+    init_struct_env(export);
+    fill_struct_env(envp, export);
     signal(SIGINT, our_sig_proc);
 	signal(SIGQUIT, our_sig_proc);
     while (1)
@@ -483,8 +437,8 @@ int main(int argv, char **argc, char **envp)
         parser(str, env, token);
         free(str);
         execute_command(env, export, token);
-        free_struct(token);
+        free_struct_store(token);
     }
-    free_struct(env);
+    free_struct(env); // прописать перед всеми выходами
     return (0);
 }

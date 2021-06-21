@@ -17,6 +17,13 @@
 # include <readline/readline.h>
 # include <readline/history.h>
 
+typedef struct          s_env
+{
+    char                *key;
+	char				*value;
+	struct s_env		*next;
+}                       t_env;
+
 typedef struct          s_store
 {
     char                *word;
@@ -43,19 +50,22 @@ typedef	struct s_minishell
 t_shell                 t_sh;
 
 void	our_sig_proc(int sig);
-int		exec_bin(t_store *token);
+int 	our_unset(t_env *env, t_env *export, t_store *token);
+// int		exec_bin(t_store *token);
 int		our_echo(char *argument);
 int		our_pwd(void);
-void    ft_error(int code);
-int 	our_env(t_store *env);
+int 	our_env(t_env *env);
 int     our_cd(int argc, char *path);
-int		our_export(t_store *env, t_store * export, t_store *token);
+int		our_export(t_env *env, t_env *export, t_store *token);
+
+char 	*get_key(char *token);
+char 	*get_value(char *token);
+t_env 	*add_node_env(t_env *env, char *key, char *value);
 char 	*single_quotes(char *str, int *i);
-char 	*double_quotes(char *str, int *i, t_store *env);
-char 	*process_dollar(char *str, int *i, t_store *env);
-void 	init_struct_store(t_store *token);
-t_store *add_node_env(t_store *env, char *str);
-int our_unset(t_store *env, t_store *export, t_store *token);
+char 	*double_quotes(char *str, int *i, t_env *env);
+char 	*process_dollar(char *str, int *i, t_env *env);
+int check_export_argument(char *arg);
+void    ft_error(int code);
 
 
 #endif

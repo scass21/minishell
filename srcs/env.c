@@ -6,7 +6,7 @@
 /*   By: lkasandr <lkasandr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/05/21 06:18:35 by scass             #+#    #+#             */
-/*   Updated: 2021/06/17 18:54:21 by lkasandr         ###   ########.fr       */
+/*   Updated: 2021/06/21 00:48:57 by lkasandr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,14 +25,14 @@
 // 	return (0);
 // }
 
-int our_env(t_store *env)
+int our_env(t_env *env)
 {
-	t_store *p;
+	t_env *p;
 
 	p = env;
 	while (p != NULL)
 	{
-		printf("%s\n", p->word);
+		printf("%s=%s\n", p->key, p->value);
 		p = p->next;
 	}
 	return (0);

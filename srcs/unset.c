@@ -1,36 +1,51 @@
 #include "minishell.h"
 
-t_store *delete_node(t_store *lst, t_store *root)
+t_env *delete_node_env(t_env *lst, t_env *root)
 {
-    t_store *temp;
+    t_env *temp;
 
     temp = root;
     while(temp->next != lst)
         temp = temp->next;
     temp->next = lst->next;
-    free(lst);
     return (temp);
 }
 
-int our_unset(t_store *env, t_store *export, t_store *token)
+static int search_key(char *key, t_env *env)
 {
-    t_store *env2;
-    t_store *export2;
-    t_store *next;
+    t_env *p;
+    int flag;
 
-    env2 = env;
-    export2 = export;
-    next = token->next;
-
-    while (next)
+    p = env;
+    flag = 0;
+    while(p)
     {
-        while(env2)
+        if (ft_strcmp(key, p->key) == 0)
         {
-            if (ft_strcmp(env2->word, next->word) == 0)
-                env = delete_node(env2, env);
-            env2 = env2->next;
+            p = delete_node_env(p, env);
+            flag = 1;
         }
-        next = next->next;
+        p = p->next;
+    }
+    return (flag);
+}
+
+int our_unset(t_env *env, t_env *export, t_store *token)
+{
+    t_store *token2;
+
+    token2 = token->next;
+
+    while(token2)
+    {
+        if (check_export_argument(token2->word) == -1)
+        {
+            printf("minishell: unset: `%s': not a valid identifier\n", token2->word);
+            return (0);
+        }
+        search_key(token2->word, env);
+        search_key(token2->word, export);
+        token2 = token2->next;
     }
     return (0);
 }

@@ -1,15 +1,6 @@
 #include "minishell.h"
 
-static void add_new_env(t_store *env, t_store *export, char *key, char *value)
-{
-    char *str;
-
-    str = ft_strjoin(key, value);
-    env = add_node_env(env, str);
-    export = add_node_env(export, str);
-}
-
-static int check_export_argument(char *arg)
+int check_export_argument(char *arg)
 {
     int i;
     int k;
@@ -41,123 +32,119 @@ static int check_export_argument(char *arg)
     return(0);
 }
 
-static char *process_value(char *str, int i, t_store *env)
+static int check_repeat(char *key, char *value, t_env *env)
 {
-    char *arg;
-    int k;
+    t_env *p;
+    int flag;
 
-    arg = ft_substr(str, i + 1, ft_strlen(str) - i);
-    if (!arg)
-        ft_error(1);
-    k = 0;
-    while(arg[k])
+    p = env;
+    flag = 0;
+    while(p)
     {
-        if (arg[k] == '\'')
+        if (ft_strcmp(key, p->key) == 0)
         {
-            arg = single_quotes(arg, &k);
-            k = k - 2;
+            free(p->key);
+            p->key = ft_strdup(key);
+            if (value)
+            {
+                free(p->value);
+                p->value = ft_strdup(value);
+            }
+            flag = 1;
         }
-        if (arg[k] == '\"')
-        {
-            arg = double_quotes(arg, &k, env);
-            k = k - 2;
-        }
-        if (arg[k] == '$')
-            arg = process_dollar(arg, &k, env);
-        k++;
+        p = p->next;
     }
-    return (arg);
+    return(flag);
 }
 
-static void sort_struct(t_store *env)
-{
-    t_store *tmp;
-    t_store *min;
-    t_store *r;
-    char *str;
-
-    tmp = env;
-    while(tmp)
-    {
-        min = tmp;
-        r = tmp->next;
-        while(r)
-        {
-            if (strncmp(min->word, r->word, 1) > 0)
-                min = r;
-            r = r->next;
-        }
-        str = tmp->word;
-        tmp->word = min->word;
-        min->word = str;
-        tmp = tmp->next;
-    }
-}
-
-static void print_declare_export(t_store *export)
-{
-    t_store *tmp;
-
-    sort_struct(export);
-    tmp = export;
-    while(tmp != NULL)
-    {
-        printf("declare -x %s\n", tmp->word);
-        tmp = tmp->next;
-    }
-}
-
-// static void fill_struct_export(t_store *export, t_store *env)
-// {
-//     t_store *temp_env;
-
-//     temp_env = env;
-//     while(temp_env)
-//     {
-//         if (!export->word)
-//         {
-//             export->word = ft_strdup(temp_env->word);
-//             if (!export->word)
-//                 ft_error(1);
-//         }
-//         else
-//             export = add_node_env(export, temp_env->word);
-//         temp_env = temp_env->next;
-//     }
-
-//     // t_store *p;
-//     // p = export;
-//     // while(p != NULL)
-//     // {
-//     //     printf("%s\n", p->word);
-//     //     p = p->next;
-//     // }
-    
-// }
-
-static void add_env_and_export(char *str, t_store *env, t_store *export)
+static char *process_value(char *val, t_env *env)
 {
     int i;
-    char *key;
-    char *value;
 
     i = 0;
-    key = NULL;
-    while(str[i])
+    while(val[i])
     {
-        if (str[i] == '=')
+        if (val[i] == '\'')
+        {
+            val = single_quotes(val, &i);
+            i = i - 2;
+        }
+        if (val[i] == '\"')
+        {
+            val = double_quotes(val, &i, env);
+            i = i - 2;
+        }
+        if (val[i] == '$')
+            val = process_dollar(val, &i, env);
+        i++;
+    }
+    return (val);
+}
+
+static void add_env_and_export(char *key, char *value, t_env *env, t_env *export)
+{
+    char *val;
+
+    val = NULL;
+    if (value)
+        val = process_value(value, env);
+    if (check_repeat(key, val, env) == 0)
+        add_node_env(env, key, val);
+
+    if (check_repeat(key, val, export) == 0)
+        add_node_env(export, key, val);
+}
+
+char *get_key(char *token)
+{
+    char *key;
+    int i;
+
+    key = NULL;
+    i = 0;
+    while(token[i])
+    {
+        if (token[i] == '=')
             break;
         i++;
     }
-    key = ft_substr(str, 0, i + 1);
+    key = ft_substr(token, 0, i);
     if (!key)
         ft_error(1);
-    value = process_value(str, i, env);
-    add_new_env(env, export, key, value);
+    return(key);
 }
 
-static int process_export(t_store *next_token, t_store *env, t_store *export)
+char *get_value(char *token)
 {
+    char *value;
+    int i;
+    int len;
+
+    value = NULL;
+    i = 0;
+    len = ft_strlen(token);
+    while(token[i])
+    {
+        if (token[i] == '=')
+            break;
+        i++;
+    }
+    if (i != len - 1)
+    {
+        value = ft_substr(token, i + 1, len - i);
+        if (!value)
+            ft_error(1);
+    }
+    return(value);
+}
+
+static int process_export(t_store *next_token, t_env *env, t_env *export)
+{
+    char *key;
+    char *value;
+
+    key = NULL;
+    value = NULL;
     while(next_token)
     {
         if (check_export_argument(next_token->word) == -1)
@@ -166,9 +153,17 @@ static int process_export(t_store *next_token, t_store *env, t_store *export)
             return (0);
         }
         if (ft_strchr(next_token->word, '='))
-            add_env_and_export(next_token->word, env, export);
+        {
+            key = get_key(next_token->word);
+            value = get_value(next_token->word);
+            add_env_and_export(key, value, env, export);
+        }
         else
-            export = add_node_env(export, next_token->word);
+        {
+            key = ft_strdup(next_token->word);
+            if (check_repeat(key, value, export) == 0)
+                export = add_node_env(export, key, value);
+        }
         next_token = next_token->next;
     }
 
@@ -176,7 +171,62 @@ static int process_export(t_store *next_token, t_store *env, t_store *export)
     return (0);
 }
 
-int	our_export(t_store *env, t_store * export, t_store *token)
+static void sort_struct(t_env *export)
+{
+    t_env *tmp;
+    t_env *min;
+    t_env *r;
+    char *key;
+    char *value;
+    int i;
+
+    tmp = export;
+    while(tmp)
+    {
+        min = tmp;
+        r = tmp->next;
+        while(r)
+        {
+            i = 1;
+            while(i <= ft_strlen(min->key))
+            {
+                if (strncmp(min->key, r->key, i) > 0)
+                {
+                    min = r;
+                    break;
+                }
+                i++;
+            }
+            r = r->next;
+        }
+        key = tmp->key;
+        value = tmp->value;
+        tmp->key = min->key;
+        tmp->value = min->value;
+        min->key = key;
+        min->value = value;
+        tmp = tmp->next;
+    }
+}
+
+static void print_declare_export(t_env *export)
+{
+    t_env *tmp;
+
+    sort_struct(export);
+    tmp = export;
+    while(tmp != NULL)
+    {
+        printf("declare -x %s", tmp->key);
+        if (tmp->value)
+            printf("=\"%s\"\n", tmp->value);
+        else
+            printf("\n");
+        tmp = tmp->next;
+    }
+}
+
+int	our_export(t_env *env, t_env * export, t_store *token)
 {
     t_store *next_token;
 
