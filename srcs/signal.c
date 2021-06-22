@@ -12,7 +12,6 @@ void	our_sig_proc(int sig)
 	}
 	else if (sig == SIGQUIT)
 	{
-		write(1, "\nminishell$ ", 12);
 		t_sh.exit_code = 131;
 
 	}

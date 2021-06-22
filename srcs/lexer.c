@@ -82,7 +82,7 @@ char *process_dollar(char *str, int *i, t_env *env)
 
     j = *i;
     (*i)++;
-    if (!str[*i] || str[*i] == '\'' || str[*i] == '\"')
+    if (!str[*i] || str[*i] == '\'' || str[*i] == '\"' || str[*i] == '?')
         return (str);
     while(str[*i])
     {
@@ -169,6 +169,11 @@ static int parser(char *str, t_env *env, t_store *token)
     int i;
 
     i = 0;
+    if (!str || *str == '\4' || *str == EOF)
+    {
+        printf("exit\n");
+        exit(0);
+    }
     while(*str == ' ' || *str == '\t')
         str++;
     while(str[i])
@@ -185,6 +190,8 @@ static int parser(char *str, t_env *env, t_store *token)
         }
         if (str[i] == '$')
         {
+            if (str[i++] == '?')
+                printf("%d: command not found", t_sh.exit_code);
             str = process_dollar(str, &i, env);
             if (!str)
                 return (-1);
@@ -259,11 +266,7 @@ static int execute_command(t_env *env, t_env * export, t_store *token)
             p = p->next;
             n_flag = 1;
         }
-        if (ft_strcmp(p->word, "$?") == 0)
-        {
-            printf("%d", t_sh.exit_code);
-            return (0);
-        }
+      
         while(p != NULL)
         {
             our_echo(p->word);
@@ -298,13 +301,18 @@ static int execute_command(t_env *env, t_env * export, t_store *token)
         }
         our_env(env);
     }
-    else if (ft_strcmp(token->word, "\n") == 0)
+    else if (ft_strcmp(token->word, "$?") == 0)
     {
-        write(1, "\n", 1);
-    }
+       printf("%d: command not found\n", t_sh.exit_code);
+        return (0);
+    }  
     else
-        // exec_bin(token);
-        printf("exec_bin on\n");
+    {
+        if (!token || ft_strcmp(token->word, "\n") == 0)
+            return (0);
+        else
+            exec_bin(token);
+    }
     return (0);
 }
 
@@ -388,6 +396,8 @@ void	init_mini()
 {
 	t_sh.exit_code = 0;
 	t_sh.fork_status = 0;
+    t_sh.sig_flag_quit = 0;
+    t_sh.sig_flag_int = 0;
 	// t_sh->path = NULL;
 	// t_sh->str = NULL;
 	// ft_bzero(t_sh->str, ft_strlen(t_sh->str));
@@ -425,8 +435,8 @@ int main(int argv, char **argc, char **envp)
         ft_error(1);
     init_struct_env(export);
     fill_struct_env(envp, export);
-    // signal(SIGINT, our_sig_proc);
-	// signal(SIGQUIT, our_sig_proc);
+    signal(SIGINT, (void *) our_sig_proc);
+	signal(SIGQUIT, (void *)our_sig_proc);
     while (1)
     {
         token = (t_store *)malloc(sizeof(t_store));

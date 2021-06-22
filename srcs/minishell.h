@@ -2,8 +2,9 @@
 # define MINISHELL_H
 
 
-# include <curses.h>
-# include <term.h>
+// # include <curses.h>
+# include <signal.h>
+// # include <term.h>
 # include <string.h>
 # include <unistd.h>
 # include <stdlib.h>
@@ -33,17 +34,20 @@ typedef struct          s_store
 
 typedef	struct s_minishell
 {
-	struct termios		term;
-	struct termios		ret_term;
+	// struct termios		term;
+	// struct termios		ret_term;
 	int					fork_status;
 	int					exit_code;
-	int					win_col;
-	int					win_row;
-	int					col;
-	int					row;
-	char				*cm;
-	char				*ce;
-	char				*dc;
+	// int					win_col;
+	// int					win_row;
+	// int					col;
+	// int					row;
+	// char				*cm;
+	// char				*ce;
+	// char				*dc;
+
+	int					sig_flag_int;
+	int					sig_flag_quit;
 
 }						t_shell;
 

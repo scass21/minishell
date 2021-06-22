@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   echo.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lkasandr <lkasandr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: scass <scass@student.21-school.ru>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/05/19 13:58:12 by scass             #+#    #+#             */
-/*   Updated: 2021/06/15 23:40:45 by lkasandr         ###   ########.fr       */
+/*   Updated: 2021/06/22 11:09:34 by scass            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,9 @@ int		our_echo(char *argument)
 {
 	if (!argument)
 		printf("\n");
-	printf("%s", argument);
+	else if (ft_strcmp(argument,"$?") == 0)
+		printf("%d", t_sh.exit_code);
+	else 
+		printf("%s", argument);
 	return (0);	
 }
