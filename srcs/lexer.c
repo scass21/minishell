@@ -164,6 +164,12 @@ t_store *add_node_token(t_store *token, char *str, int i)
     return (temp);
 }
 
+int redirect_output(char *str, int i)
+{
+    open("lol", O_WRONLY | O_CREAT | O_APPEND, 0644);
+    return (1);
+}
+
 static int parser(char *str, t_env *env, t_store *token)
 {
     int i;
@@ -205,6 +211,11 @@ static int parser(char *str, t_env *env, t_store *token)
                 return (0);
             str = ft_substr(str, i, ft_strlen(str) - i);
             i = -1;
+        }
+        if (str[i] == '>' && str[i + 1] != '>')
+        {
+            redirect_output(str, i);
+            return (0);
         }
         i++;
     }
@@ -303,8 +314,7 @@ static int execute_command(t_env *env, t_env * export, t_store *token)
         write(1, "\n", 1);
     }
     else
-        // exec_bin(token);
-        printf("exec_bin on\n");
+        exec_bin(token);
     return (0);
 }
 
@@ -425,8 +435,8 @@ int main(int argv, char **argc, char **envp)
         ft_error(1);
     init_struct_env(export);
     fill_struct_env(envp, export);
-    // signal(SIGINT, our_sig_proc);
-	// signal(SIGQUIT, our_sig_proc);
+    signal(SIGINT, our_sig_proc);
+	signal(SIGQUIT, our_sig_proc);
     while (1)
     {
         token = (t_store *)malloc(sizeof(t_store));

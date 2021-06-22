@@ -8,16 +8,18 @@ char	**make_arg(t_store *token, char **arg)
     
 	temp = token;
     i = 0;
+	j = 0;
 	while (temp != NULL)
 	{
 		i++;
 		temp = temp->next;
 	}
+	arg = (char **)malloc(sizeof(char) * i);
 	temp = token;
 	j = 0;
 	while (j < i)
 	{
-		arg[j] = temp->word;
+		arg[j] = ft_strdup(temp->word);
 		temp = temp->next;
 		j++;
 	}
@@ -62,5 +64,3 @@ int		exec_bin(t_store *token)
 	}
 	return 1;
 }
-
-

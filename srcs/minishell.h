@@ -66,6 +66,7 @@ char 	*double_quotes(char *str, int *i, t_env *env);
 char 	*process_dollar(char *str, int *i, t_env *env);
 int check_export_argument(char *arg);
 void    ft_error(int code);
+// int count_argument(t_store *token);
 
 
 #endif
