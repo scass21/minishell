@@ -172,7 +172,7 @@ static int parser(char *str, t_env *env, t_store *token)
     if (!str || *str == '\4' || *str == EOF)
     {
         printf("exit\n");
-        exit(0);
+        free_exit(token, env, 0);
     }
     while(*str == ' ' || *str == '\t')
         str++;
@@ -305,10 +305,14 @@ static int execute_command(t_env *env, t_env * export, t_store *token)
     {
        printf("%d: command not found\n", t_sh.exit_code);
         return (0);
-    }  
+    }
+    else if (ft_strcmp(token->word, "exit") == 0)
+    {
+        free_exit(token, env, 0);
+    }
     else
     {
-        if (!token || ft_strcmp(token->word, "\n") == 0)
+        if (!token || ft_strcmp(token->word, "\0") == 0)
             return (0);
         else
             exec_bin(token);
@@ -316,17 +320,6 @@ static int execute_command(t_env *env, t_env * export, t_store *token)
     return (0);
 }
 
-static void free_struct_store(t_store *token)
-{
-    t_store *p;
-    while(token != NULL)
-        {
-            p = token;
-            token = token->next;
-            if (p)
-                free(p);
-        }
-}
 
 t_env *add_node_env(t_env *env, char *key, char *value)
 {
