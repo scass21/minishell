@@ -398,6 +398,19 @@ static void init_struct_env(t_env *env)
     env->next = NULL;
 }
 
+static void free_struct_store(t_store *token)
+{
+    t_store *p;
+
+    while (token != NULL)
+    {
+        p = token;
+        token = token->next;
+        if (p)
+            free(p);
+    }
+}
+
 int main(int argv, char **argc, char **envp)
 {
     char *str;

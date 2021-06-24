@@ -15,6 +15,7 @@
 # include "../libft/libft.h"
 # include <errno.h>
 # include <sys/wait.h>
+# include <dirent.h>
 # include <readline/readline.h>
 # include <readline/history.h>
 
@@ -55,12 +56,14 @@ t_shell                 t_sh;
 
 void	our_sig_proc(int sig);
 int 	our_unset(t_env *env, t_env *export, t_store *token);
-int		exec_bin(t_store *token);
+int		exec_bin(t_store *token, t_env *env_value, char **env);
 int		our_echo(char *argument);
 int		our_pwd(void);
 int 	our_env(t_env *env);
 int     our_cd(int argc, char *path, t_env *env, t_env *export);
 int		our_export(t_env *env, t_env *export, t_store *token);
+
+int		free_exit(t_store *store, t_env *env, int code);
 
 char 	*get_key(char *token);
 char 	*get_value(char *token);
