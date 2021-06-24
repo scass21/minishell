@@ -4,7 +4,10 @@ void	our_sig_proc(int sig)
 {
 	if (sig == SIGINT)
 	{
-		write(1, "\nminishell$ ", 12);
+		rl_replace_line("", 0);
+		write(1, "\n", 1);
+		rl_on_new_line();
+		rl_redisplay();
 		if (t_sh.fork_status == 1)
 			t_sh.exit_code = 1;				// value for $?
 		else
@@ -13,6 +16,5 @@ void	our_sig_proc(int sig)
 	else if (sig == SIGQUIT)
 	{
 		t_sh.exit_code = 131;
-
 	}
 }

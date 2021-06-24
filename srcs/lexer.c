@@ -248,7 +248,7 @@ static int count_argument(t_store *token)
     return (count);
 }
 
-static int execute_command(t_env *env, t_env * export, t_store *token)
+static int execute_command(t_env *env, t_env * export, t_store *token, char **envp)
 {
     t_store *p;
     int n_flag;
@@ -315,7 +315,7 @@ static int execute_command(t_env *env, t_env * export, t_store *token)
         if (!token || ft_strcmp(token->word, "\0") == 0)
             return (0);
         else
-            exec_bin(token);
+            exec_bin(token, env, envp);
     }
     return (0);
 }
@@ -389,16 +389,6 @@ void	init_mini()
 {
 	t_sh.exit_code = 0;
 	t_sh.fork_status = 0;
-    t_sh.sig_flag_quit = 0;
-    t_sh.sig_flag_int = 0;
-	// t_sh->path = NULL;
-	// t_sh->str = NULL;
-	// ft_bzero(t_sh->str, ft_strlen(t_sh->str));
-	// t_sh->col = 0;
-	// t_sh->row = 0;
-	// t_sh->win_col = 0;
-	// t_sh->win_row = 0;
-
 }
 
 static void init_struct_env(t_env *env)
@@ -428,6 +418,7 @@ int main(int argv, char **argc, char **envp)
         ft_error(1);
     init_struct_env(export);
     fill_struct_env(envp, export);
+    // rl_catch_signals = 0;            //forbiden?
     signal(SIGINT, (void *) our_sig_proc);
 	signal(SIGQUIT, (void *)our_sig_proc);
     while (1)
@@ -437,11 +428,17 @@ int main(int argv, char **argc, char **envp)
             ft_error(1);
         str = NULL;
         init_struct_store(token);
+       
         str = readline("minishell$ ");
+        if (!str || *str == '\4' || *str == EOF)
+        {
+            printf("exit\n");
+            free_exit(token, env, 0);
+        }
         add_history(str);
         parser(str, env, token);
         free(str);
-        execute_command(env, export, token);
+        execute_command(env, export, token, envp);
         free_struct_store(token);
     }
     // free_struct(env); // прописать перед всеми выходами
