@@ -33,12 +33,16 @@ typedef struct          s_store
 }                       t_store;
 
 
+
+
 typedef	struct s_minishell
 {
 	// struct termios		term;
 	// struct termios		ret_term;
 	int					fork_status;
 	int					exit_code;
+	int					fd;
+	int					fd2;
 	// int					win_col;
 	// int					win_row;
 	// int					col;
@@ -56,14 +60,17 @@ t_shell                 t_sh;
 
 void	our_sig_proc(int sig);
 int 	our_unset(t_env *env, t_env *export, t_store *token);
-int		exec_bin(t_store *token, t_env *env_value, char **env);
+int		exec_bin(t_store *token, t_env *env_value, char **env, int count);
 int		our_echo(char *argument);
 int		our_pwd(void);
 int 	our_env(t_env *env);
 int     our_cd(int argc, char *path, t_env *env, t_env *export);
 int		our_export(t_env *env, t_env *export, t_store *token);
 
+char *process_redirect(char *str, t_env *env);
+
 int		free_exit(t_store *store, t_env *env, int code);
+void rl_replace_line();
 
 char 	*get_key(char *token);
 char 	*get_value(char *token);
@@ -74,5 +81,12 @@ char 	*process_dollar(char *str, int *i, t_env *env);
 int check_export_argument(char *arg);
 void    ft_error(int code);
 
+t_store *add_node_token(t_store *token, char *str, int i);
+int execute_command(t_env *env, t_env * export, t_store *token, char **envp);
+void our_redirect(t_env *env, t_env *export, t_store *token, char **envp);
+
 
 #endif
+
+
+//gcc -g -Wall -Wextra lexer.c cd.c echo.c env.c error.c exec.c exit.c export.c pwd.c signal.c unset.c -lreadline ../libft/libft.a -L/Users/lkasandr/.brew/Cellar/readline/8.1/lib/

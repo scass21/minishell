@@ -213,6 +213,13 @@ static int parser(char *str, t_env *env, t_store *token)
             str = ft_substr(str, i, ft_strlen(str) - i);
             i = -1;
         }
+        if (str[i] == '>' || str[i] == '<')
+        {
+             str = process_redirect(str, env);
+             if (t_sh.fd == -1 || t_sh.fd2 == -1)
+                return (-1);
+             i = -1;
+        }
         i++;
     }
     if (!token->word)
@@ -226,7 +233,7 @@ static int parser(char *str, t_env *env, t_store *token)
     return (0);
 }
 
-void init_struct_store(t_store *token)
+static void init_struct_store(t_store *token)
 {
     
     token->word = NULL;
@@ -248,7 +255,7 @@ static int count_argument(t_store *token)
     return (count);
 }
 
-static int execute_command(t_env *env, t_env * export, t_store *token, char **envp)
+int execute_command(t_env *env, t_env * export, t_store *token, char **envp)
 {
     t_store *p;
     int n_flag;
@@ -315,7 +322,7 @@ static int execute_command(t_env *env, t_env * export, t_store *token, char **en
         if (!token || ft_strcmp(token->word, "\0") == 0)
             return (0);
         else
-            exec_bin(token, env, envp);
+            exec_bin(token, env, envp, count);
     }
     return (0);
 }
@@ -389,6 +396,8 @@ void	init_mini()
 {
 	t_sh.exit_code = 0;
 	t_sh.fork_status = 0;
+    t_sh.fd = 0;
+    t_sh.fd2 = 0;
 }
 
 static void init_struct_env(t_env *env)
@@ -436,6 +445,8 @@ int main(int argv, char **argc, char **envp)
 	signal(SIGQUIT, (void *)our_sig_proc);
     while (1)
     {
+        t_sh.fd = 0;
+        t_sh.fd2 = 0;
         token = (t_store *)malloc(sizeof(t_store));
         if (!token)
             ft_error(1);
@@ -449,9 +460,9 @@ int main(int argv, char **argc, char **envp)
             free_exit(token, env, 0);
         }
         add_history(str);
-        parser(str, env, token);
+        if (parser(str, env, token) != -1)
+            our_redirect(env, export, token, envp);
         free(str);
-        execute_command(env, export, token, envp);
         free_struct_store(token);
     }
     // free_struct(env); // прописать перед всеми выходами

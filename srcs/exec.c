@@ -1,35 +1,22 @@
 # include "minishell.h"
 
-char	**make_arg(t_store *token, char **arg)
+char	**make_arg(t_store *token, int count)
 {
-	int     i;
-    int     j;
-    int     len;
+	char **array;
     t_store *temp;
-	
+	int j;
+
+	j = 0;
+    array = (char **)malloc(sizeof(char *) * (count + 1));
     temp = token;
-    i = 0;
-    j = 0;
-    len = 0;
-    while (temp != NULL)
+    while (temp)
     {
-        i++;
-        j = ft_strlen(temp->word);
-        if (len < j)
-            len = j;
-        temp = temp->next;
-    }
-    arg = (char **)malloc(sizeof(char) * i * len);
-    temp = token;
-    j = 0;
-    while (j < i)
-    {
-        arg[j] = ft_strdup(temp->word);
+        array[j] = ft_strdup(temp->word);
         temp = temp->next;
         j++;
     }
-	arg[j] = NULL;
-    return (arg);
+	array[j] = NULL;
+    return (array);
 }
 
 char	*find_path(t_env *env, char *bin)
@@ -87,7 +74,7 @@ char	*make_path(char *arg, t_env *env)
 	return (path);
 }
 
-int		exec_bin(t_store *token, t_env *env_value, char **env)
+int		exec_bin(t_store *token, t_env *env_value, char **env, int count)
 {
 	pid_t	pid;
 	int		status;
@@ -95,7 +82,7 @@ int		exec_bin(t_store *token, t_env *env_value, char **env)
 	char	**arg;
 	
 	arg = NULL;
-	arg = make_arg(token, arg);
+	arg = make_arg(token, count);
 	path = make_path(arg[0], env_value);
 	pid = fork();
 	signal(SIGINT, our_sig_proc);
