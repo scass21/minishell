@@ -84,6 +84,7 @@ void    ft_error(int code);
 t_store *add_node_token(t_store *token, char *str, int i);
 int execute_command(t_env *env, t_env * export, t_store *token, char **envp);
 void our_redirect(t_env *env, t_env *export, t_store *token, char **envp);
+char *process_value(char *val, t_env *env);
 
 
 #endif

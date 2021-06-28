@@ -57,7 +57,7 @@ static int check_repeat(char *key, char *value, t_env *env)
     return(flag);
 }
 
-static char *process_value(char *val, t_env *env)
+char *process_value(char *val, t_env *env)
 {
     int i;
 

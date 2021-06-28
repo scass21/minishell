@@ -215,6 +215,20 @@ static int parser(char *str, t_env *env, t_store *token)
         }
         if (str[i] == '>' || str[i] == '<')
         {
+             if (i != 0)
+             {
+                if (!token->word)
+                {
+                    token->word = ft_substr(str, 0, i);
+                    if (!token->word)
+                        ft_error(1);
+                }
+                else
+                    token = add_node_token(token, str, i);
+                str = ft_substr(str, i, ft_strlen(str) - i);
+             }
+             printf("str: %s\n", str);
+                
              str = process_redirect(str, env);
              if (t_sh.fd == -1 || t_sh.fd2 == -1)
                 return (-1);
@@ -396,8 +410,8 @@ void	init_mini()
 {
 	t_sh.exit_code = 0;
 	t_sh.fork_status = 0;
-    t_sh.fd = 0;
-    t_sh.fd2 = 0;
+    t_sh.fd = STDOUT_FILENO;
+    t_sh.fd2 = STDIN_FILENO;
 }
 
 static void init_struct_env(t_env *env)
@@ -445,8 +459,8 @@ int main(int argv, char **argc, char **envp)
 	signal(SIGQUIT, (void *)our_sig_proc);
     while (1)
     {
-        t_sh.fd = 0;
-        t_sh.fd2 = 0;
+        t_sh.fd = STDOUT_FILENO;
+        t_sh.fd2 = STDIN_FILENO;
         token = (t_store *)malloc(sizeof(t_store));
         if (!token)
             ft_error(1);

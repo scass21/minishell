@@ -82,16 +82,16 @@ static char *cat_str(t_store *node)
     p = p->next;
     str = NULL;
     tmp = NULL;
-    str = (char *)malloc(sizeof(char));
-    if (!str)
-        ft_error(1);
     if (!p)
         return ("\0");
     else
     {
         while(p)
         {
-            tmp = ft_strjoin(str, p->word);
+            if (!str)
+                tmp = ft_strdup(p->word);
+            else
+                tmp = ft_strjoin(str, p->word);
             str = ft_strjoin(tmp, " ");
             p = p->next;
         }
@@ -105,9 +105,13 @@ char *process_redirect(char *str, t_env *env)
     char *filename;
     t_store *node;
 
+    int r = 0;
+    char *buf;
+
 
     tmp = NULL;
     filename = NULL;
+    buf = (char *)malloc(sizeof(char));
     node = (t_store *)malloc(sizeof(t_store));
     if (!node)
         ft_error(1);
@@ -121,9 +125,11 @@ char *process_redirect(char *str, t_env *env)
             filename = ft_strdup(node->word);
             if (!filename)
                 ft_error(1);
+            filename = process_value(filename, env);
             t_sh.fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
             if (t_sh.fd == -1)
                 printf("%s\n", strerror(errno));
+                printf("fd1: %i\n", t_sh.fd);
             tmp = cat_str(node);
             free(filename);
             // free_struct_store(node);
@@ -159,6 +165,29 @@ char *process_redirect(char *str, t_env *env)
             free(filename);
             // free_struct_store(node);
         }
+        if (*str == '<')
+        {
+            str++;
+            fill_struct_node(node, str, env);
+            filename = ft_strdup(node->word);
+            filename = ft_strjoin(filename, "\n");
+            if (!filename)
+                ft_error(1);
+            tmp = cat_str(node);
+            r = read(t_sh.fd2, buf, BUFFER_SIZE);
+            if (r == -1)
+                ft_error(2);
+            while(r > 0)
+            {
+                if (ft_strcmp(buf, filename) == 0)
+                    break;
+                ft_free(buf);
+                buf = (char *)malloc(sizeof(char));
+                r = read(t_sh.fd2, buf, BUFFER_SIZE);
+            }
+            ft_free(buf);
+            // // free_struct_store(node);
+        }
     }
 
     return (tmp);
@@ -174,10 +203,13 @@ void our_redirect(t_env *env, t_env *export, t_store *token, char **envp)
 	signal(SIGQUIT, our_sig_proc);
 	if (pid == 0)
 	{
+        // printf("fd2: %i\n", t_sh.fd);
         t_sh.fork_status = 1;
-        dup2(t_sh.fd, 1);
-        dup2(t_sh.fd2, 0);
+        dup2(t_sh.fd, STDOUT_FILENO);
+        dup2(t_sh.fd2, STDIN_FILENO);
         execute_command(env, export, token, envp);
+        close(t_sh.fd);
+        close(t_sh.fd2);
         t_sh.fork_status = 0;
 		exit(0);
     }
