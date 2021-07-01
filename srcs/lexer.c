@@ -227,8 +227,6 @@ static int parser(char *str, t_env *env, t_store *token)
                     token = add_node_token(token, str, i);
                 str = ft_substr(str, i, ft_strlen(str) - i);
              }
-             printf("str: %s\n", str);
-                
              str = process_redirect(str, env);
              if (t_sh.fd == -1 || t_sh.fd2 == -1)
                 return (-1);
@@ -475,7 +473,11 @@ int main(int argv, char **argc, char **envp)
         }
         add_history(str);
         if (parser(str, env, token) != -1)
-            our_redirect(env, export, token, envp);
+        {
+            dup2(t_sh.fd, STDOUT_FILENO);
+            dup2(t_sh.fd2, STDIN_FILENO);
+            execute_command(env, export, token, envp);
+        }
         free(str);
         free_struct_store(token);
     }

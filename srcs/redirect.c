@@ -129,7 +129,6 @@ char *process_redirect(char *str, t_env *env)
             t_sh.fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
             if (t_sh.fd == -1)
                 printf("%s\n", strerror(errno));
-                printf("fd1: %i\n", t_sh.fd);
             tmp = cat_str(node);
             free(filename);
             // free_struct_store(node);
@@ -191,37 +190,4 @@ char *process_redirect(char *str, t_env *env)
     }
 
     return (tmp);
-}
-
-void our_redirect(t_env *env, t_env *export, t_store *token, char **envp)
-{
-    pid_t	pid;
-	int		status;
-
-    pid = fork();
-	signal(SIGINT, our_sig_proc);
-	signal(SIGQUIT, our_sig_proc);
-	if (pid == 0)
-	{
-        // printf("fd2: %i\n", t_sh.fd);
-        t_sh.fork_status = 1;
-        dup2(t_sh.fd, STDOUT_FILENO);
-        dup2(t_sh.fd2, STDIN_FILENO);
-        execute_command(env, export, token, envp);
-        close(t_sh.fd);
-        close(t_sh.fd2);
-        t_sh.fork_status = 0;
-		exit(0);
-    }
-    else if (pid < 0)
-	{
-		printf("%s\n", strerror(errno));
-		exit(1);
-	}
-	else
-	{
-		waitpid(pid, &status, 0);
-		if (WIFEXITED(status))
-			t_sh.exit_code = WEXITSTATUS(status);
-	}
 }
