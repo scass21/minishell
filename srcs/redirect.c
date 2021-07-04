@@ -1,28 +1,18 @@
 #include "minishell.h"
 
-static int	ft_free(char *str)
-{
-	if (str)
-		free(str);
-	str = NULL;
-	return (0);
-}
 
-static void init_struct_store(t_store *token)
+char *cut_redirect(char *str, t_env *env, t_store *token, int i)
 {
-    
-    token->word = NULL;
-    token->next = NULL;
-}
+    char *tmp;
 
-static int fill_struct_node(t_store *node, char *str, t_env *env)
-{
-    int i;
-
-    i = 0;
-    while(*str == ' ' || *str == '\t')
-        str++;
-    while(str[i])
+    while(str[i] == ' ' || str[i] == '\t')
+        i++;
+    if (!str[i])
+    {
+        ft_putstr_fd("syntax error near unexpected token `newline'\n", 2);
+        return (NULL);
+    }
+    while (str[i] && str[i] != ' ' && str[i] != '>' && str[i] != '<' && str[i] != '|')
     {
         if (str[i] == '\'')
         {
@@ -36,158 +26,257 @@ static int fill_struct_node(t_store *node, char *str, t_env *env)
         }
         if (str[i] == '$')
         {
-            if (str[i++] == '?')
-                printf("%d: command not found", t_sh.exit_code);
             str = process_dollar(str, &i, env);
             if (!str)
-                return (-1);
-        }
-        if (str[i] == ' ' || str[i] == '\t')
-        {
-            if (!node->word)
-            {
-                node->word = ft_substr(str, 0, i);
-                if (!node->word)
-                    ft_error(1);
-            }
-            else
-                node = add_node_token(node, str, i);
-            while(str[i] == ' ' || str[i] == '\t')
-                i++;
-            if (i == ft_strlen(str))
-                return (0);
-            str = ft_substr(str, i, ft_strlen(str) - i);
-            i = -1;
+                return (NULL);
         }
         i++;
     }
-    if (!node->word)
+    if (!token->word)
     {
-        node->word = ft_strdup(str);
-        if (!node->word)
-            ft_error(1);
+        token->word = ft_substr(str, 0, i);
+        if (!token->word)
+            return (NULL);
     }
     else
-        node = add_node_token(node, str, ft_strlen(str));
-    return(0);
+        token = add_node_token(token, str, i);
+    tmp = ft_substr(str, i, ft_strlen(str) - i);
+    // free(str);
+    if (!tmp)  
+        return (NULL);
+    return (tmp);
 }
 
-static char *cat_str(t_store *node)
-{
-    t_store *p;
-    char *str;
-    char *tmp;
-
-    p = node;
-    p = p->next;
-    str = NULL;
-    tmp = NULL;
-    if (!p)
-        return ("\0");
-    else
-    {
-        while(p)
-        {
-            if (!str)
-                tmp = ft_strdup(p->word);
-            else
-                tmp = ft_strjoin(str, p->word);
-            str = ft_strjoin(tmp, " ");
-            p = p->next;
-        }
-    }
-    return(str);
-}
-
-char *process_redirect(char *str, t_env *env)
+char *process_redirect(char *str, t_env *env, t_store *token)
 {
     char *tmp;
-    char *filename;
-    t_store *node;
-
-    int r = 0;
-    char *buf;
-
+    int i;
 
     tmp = NULL;
-    filename = NULL;
-    buf = (char *)malloc(sizeof(char));
-    node = (t_store *)malloc(sizeof(t_store));
-    if (!node)
-        ft_error(1);
-    init_struct_store(node);
-    if (*str == '>')
-    {
+    i = 0;
+    while(*str == ' ' || *str == '\t')
         str++;
-        if (*str != '>')
+    if (str[i] == '>')
+    {
+        i++;
+        if (!str[i])
         {
-            fill_struct_node(node, str, env);
-            filename = ft_strdup(node->word);
-            if (!filename)
-                ft_error(1);
-            filename = process_value(filename, env);
-            t_sh.fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            if (t_sh.fd == -1)
-                printf("%s\n", strerror(errno));
-            tmp = cat_str(node);
-            free(filename);
-            // free_struct_store(node);
+            ft_putstr_fd("syntax error near unexpected token `newline'\n", 2);
+            return (NULL);
         }
-        if (*str == '>')
+        if (str[i] != '>')
         {
-            str++;
-            fill_struct_node(node, str, env);
-            filename = ft_strdup(node->word);
-            if (!filename)
-                ft_error(1);
-            t_sh.fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
-            if (t_sh.fd == -1)
-                printf("%s\n", strerror(errno));
-            tmp = cat_str(node);
-            free(filename);
-            // free_struct_store(node);
+            tmp = cut_redirect(str, env, token, 1);
+            if (!tmp)
+                return (NULL);
+            return (tmp);
+        }
+        if (str[i] == '>')
+        {
+            tmp = cut_redirect(str, env, token, 2);
+            if (!tmp)
+                return (NULL);
+            return (tmp);
         }
     }
-    if (*str == '<')
+    if (str[i] == '<')
     {
-        str++;
-        if (*str != '<')
+        i++;
+        if (!str[i])
         {
-            fill_struct_node(node, str, env);
-            filename = ft_strdup(node->word);
-            if (!filename)
-                ft_error(1);
-            t_sh.fd2 = open(filename, O_RDONLY, 0644);
-            if (t_sh.fd2 == -1)
-                printf("%s\n", strerror(errno));
-            tmp = cat_str(node);
-            free(filename);
-            // free_struct_store(node);
+            ft_putstr_fd("syntax error near unexpected token `newline'\n", 2);
+            return (NULL);
+        }
+        if (str[i] != '<')
+        {
+            tmp = cut_redirect(str, env, token, 1);
+            if (!tmp)
+                return (NULL);
+            return (tmp);
         }
         if (*str == '<')
         {
-            str++;
-            fill_struct_node(node, str, env);
-            filename = ft_strdup(node->word);
-            filename = ft_strjoin(filename, "\n");
-            if (!filename)
-                ft_error(1);
-            tmp = cat_str(node);
-            r = read(t_sh.fd2, buf, BUFFER_SIZE);
-            if (r == -1)
-                ft_error(2);
-            while(r > 0)
-            {
-                if (ft_strcmp(buf, filename) == 0)
-                    break;
-                ft_free(buf);
-                buf = (char *)malloc(sizeof(char));
-                r = read(t_sh.fd2, buf, BUFFER_SIZE);
-            }
-            ft_free(buf);
-            // // free_struct_store(node);
+            tmp = cut_redirect(str, env, token, 2);
+            if (!tmp)
+                return (NULL);
+            return (tmp);
         }
     }
-
+    // ft_free(str);
     return (tmp);
+}
+    // char *tmp;
+    // char *filename;
+
+    // int r = 0;
+    // char *buf;
+
+
+    // tmp = NULL;
+    // filename = NULL;
+    // buf = (char *)malloc(sizeof(char));
+    // node = (t_store *)malloc(sizeof(t_store));
+    // if (!node)
+    //     ft_error(1);
+    // init_struct_store(node);
+    // if (*str == '>')
+    // {
+    //     str++;
+    //     if (*str != '>')
+    //     {
+    //         fill_struct_node(node, str, env);
+    //         filename = ft_strdup(node->word);
+    //         if (!filename)
+    //             ft_error(1);
+    //         filename = process_value(filename, env);
+    //         t_sh.fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    //         if (t_sh.fd == -1)
+    //             printf("%s\n", strerror(errno));
+    //         tmp = cat_str(node);
+    //         free(filename);
+    //         // free_struct_store(node);
+    //     }
+    //     if (*str == '>')
+    //     {
+    //         str++;
+    //         fill_struct_node(node, str, env);
+    //         filename = ft_strdup(node->word);
+    //         if (!filename)
+    //             ft_error(1);
+    //         t_sh.fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
+    //         if (t_sh.fd == -1)
+    //             printf("%s\n", strerror(errno));
+    //         tmp = cat_str(node);
+    //         free(filename);
+    //         // free_struct_store(node);
+    //     }
+    // }
+    // if (*str == '<')
+    // {
+    //     str++;
+    //     if (*str != '<')
+    //     {
+    //         fill_struct_node(node, str, env);
+    //         filename = ft_strdup(node->word);
+    //         if (!filename)
+    //             ft_error(1);
+    //         t_sh.fd2 = open(filename, O_RDONLY, 0644);
+    //         if (t_sh.fd2 == -1)
+    //             printf("%s\n", strerror(errno));
+    //         tmp = cat_str(node);
+    //         free(filename);
+    //         // free_struct_store(node);
+    //     }
+    //     if (*str == '<')
+    //     {
+    //         str++;
+    //         fill_struct_node(node, str, env);
+    //         filename = ft_strdup(node->word);
+    //         filename = ft_strjoin(filename, "\n");
+    //         if (!filename)
+    //             ft_error(1);
+    //         tmp = cat_str(node);
+    //         r = read(t_sh.fd2, buf, BUFFER_SIZE);
+    //         if (r == -1)
+    //             ft_error(2);
+    //         while(r > 0)
+    //         {
+    //             if (ft_strcmp(buf, filename) == 0)
+    //                 break;
+    //             ft_free(buf);
+    //             buf = (char *)malloc(sizeof(char));
+    //             r = read(t_sh.fd2, buf, BUFFER_SIZE);
+    //         }
+    //         ft_free(buf);
+    //         // // free_struct_store(node);
+    //     }
+    // }
+
+    // return (tmp);
+// }
+
+
+int our_redirect(char *word, t_env *env, t_store *token)
+{
+    int i;
+    char *filename;
+    int fd_in;
+    int fd_out;
+
+    char *buf;
+    int r;
+
+    r = 0;
+    buf = (char *)malloc(sizeof(char));
+    if (!buf)
+        ft_error(1);
+
+
+    i = 0;
+    fd_in = 0;
+    fd_out = 1;
+    filename = NULL;
+    if (word[i] == '>' && word[i + 1] != '>')
+    {
+        word++;
+        while(*word == ' ' || *word == '\t')
+            word++;
+        filename = ft_substr(word, 0, ft_strlen(word));
+        if (!filename)
+            ft_error(1);
+        filename = process_value(filename, env);
+        fd_out = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
+        if (fd_out == -1)
+            printf("%s\n", strerror(errno));
+        // printf("filename: %s\n", filename);
+    }
+    else if (word[i] == '>' && word[i + 1] == '>')
+    {
+        word++;
+        word++;
+        while(*word == ' ' || *word == '\t')
+            word++;
+        filename = ft_substr(word, 0, ft_strlen(word));
+        if (!filename)
+            ft_error(1);
+        filename = process_value(filename, env);
+        fd_out = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
+        if (fd_in == -1)
+            printf("%s\n", strerror(errno));
+    }
+    else if (word[i] == '<' && word[i + 1] != '<')
+    {
+        word++;
+        while(*word == ' ' || *word == '\t')
+            word++;
+        filename = ft_substr(word, 0, ft_strlen(word));
+        if (!filename)
+            ft_error(1);
+        filename = process_value(filename, env);
+        fd_in = open(filename, O_RDONLY, 0644);
+        if (fd_in == -1)
+            printf("%s\n", strerror(errno));
+    }
+    else if (word[i] == '<' && word[i + 1] == '>')
+    {
+        filename = ft_substr(word, 0, ft_strlen(word));
+        if (!filename)
+            ft_error(1);
+        filename = ft_strjoin(filename, "\n");
+        r = read(fd_in, buf, BUFFER_SIZE);
+        if (r == -1)
+            ft_error(2);
+        while(r > 0)
+        {
+            if (ft_strcmp(buf, filename) == 0)
+                break;
+            free(buf);
+            buf = (char *)malloc(sizeof(char));
+            r = read(fd_in, buf, BUFFER_SIZE);
+        }
+        free(buf);
+    }
+    dup2(fd_out, 1);
+    dup2(fd_in, 0);
+    return (1);
 }

@@ -1,47 +1,47 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   echo.c                                             :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: scass <scass@student.21-school.ru>         +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2021/05/19 13:58:12 by scass             #+#    #+#             */
-/*   Updated: 2021/06/22 11:09:34 by scass            ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "minishell.h"
 
-// int		our_echo(char **argv)
-// {
-// 	int		i;
-// 	int		n;
-
-// 	i = 1;
-// 	n = 0;
-// 	if (!argv)
-// 		printf("\n");
-// 	if (argv[i] && ft_strcmp(argv[i], "-n") == 0)
-// 		n = 1;
-// 	while (argv[i])
-// 	{
-// 		printf("%s", argv[i]);
-// 		if (argv[i + 1])
-// 			printf(" ");
-// 		i++;
-// 	}
-// 	if (!n)
-// 		printf("\n");
-// 	return (0);	
-// }
-
-int		our_echo(char *argument)
+static int check_argv(char **argv)
 {
-	if (!argument)
+	int count;
+
+	count = 0;
+	while(argv[count])
+		count++;
+	if (count == 1 && ft_strlen(argv[0]) > 4)
+		return (0);
+	return (1);
+}
+
+int		our_echo(char **argv)
+{
+	int		i;
+	int		n;
+
+	i = 1;
+	n = 0;
+	if (!argv)
 		printf("\n");
-	else if (ft_strcmp(argument,"$?") == 0)
-		printf("%d", t_sh.exit_code);
-	else 
-		printf("%s", argument);
+	if (!check_argv(argv))
+	{
+		print_error(argv[0]);
+		return (0);
+	}
+	if (argv[i] && ft_strcmp(argv[i], "-n") == 0)
+	{
+		n = 1;
+		i++;
+	}
+	while (argv[i])
+	{
+		if (!ft_strcmp(argv[i],"$?"))
+			printf("%d", t_sh.exit_code);
+		else
+			printf("%s", argv[i]);
+		if (argv[i + 1])
+			printf(" ");
+		i++;
+	}
+	if (!n)
+		printf("\n");
 	return (0);	
 }

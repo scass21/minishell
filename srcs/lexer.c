@@ -32,19 +32,6 @@ static char *copy_str_without_quotes(char *str, int j, int i)
     return(tmp);
 }
 
-static char *get_tmp(char *str, int j, int i)
-{
-    char *tmp1;
-    char *tmp2;
-
-    tmp1 = NULL;
-    tmp2 = NULL;
-    tmp1 = ft_substr(str, j + 1, i - j - 1);
-    if (!tmp1)
-        ft_error(1);
-    return (tmp1);
-}
-
 static char *get_second_tmp(char *str, int j, int i, t_env *env)
 {
     char *tmp;
@@ -53,7 +40,9 @@ static char *get_second_tmp(char *str, int j, int i, t_env *env)
     t_env *p;
     
 
-    tmp = get_tmp(str, j, i);
+    tmp = ft_substr(str, j + 1, i - j - 1);
+    if (!tmp)
+        ft_error(1);
     len = ft_strlen(tmp);
     flag = 0;
     p = env;
@@ -147,36 +136,56 @@ char *single_quotes(char *str, int *i)
     return(tmp);
 }
 
+
+t_store *get_last(t_store *token) 
+{
+    if (token == NULL) {
+        return NULL;
+    }
+    while (token->next) {
+        token = token->next;
+    }
+    return (token);
+}
+
 t_store *add_node_token(t_store *token, char *str, int i)
 {
     t_store *temp;
     t_store *p;
 
+    p = get_last(token);
     temp = (t_store *)malloc(sizeof(t_store));
     if (!temp)
         ft_error(1);
-    p = token->next;
-    token->next = temp;
     temp->word = ft_substr(str, 0, i);
-    if (!temp->word)
-        ft_error(1);
-    temp->next = p;
-    return (temp);
+    temp->next = NULL;
+    p->next = temp;
+    return (p);
 }
 
-static int parser(char *str, t_env *env, t_store *token)
+t_store *push_start(t_store *token, char *join)
 {
+    t_store *p;
+
+    p = (t_store *)malloc(sizeof(t_store));
+    if (!p)
+        ft_error(1);
+    p->word = ft_strdup(join);
+    p->next = token;
+    return (p);
+}
+
+char *join_token(char *str, t_env *env, t_store *token, int flag)
+{
+    char *tmp;
+    char *join;
     int i;
 
     i = 0;
-    if (!str || *str == '\4' || *str == EOF)
-    {
-        printf("exit\n");
-        free_exit(token, env, 0);
-    }
+    join = NULL;
     while(*str == ' ' || *str == '\t')
         str++;
-    while(str[i])
+    while(str[i] && str[i] != '>' && str[i] != '<' && str[i] != '|')
     {
         if (str[i] == '\'')
         {
@@ -190,58 +199,103 @@ static int parser(char *str, t_env *env, t_store *token)
         }
         if (str[i] == '$')
         {
-            if (str[i++] == '?')
-                printf("%d: command not found", t_sh.exit_code);
+            str = process_dollar(str, &i, env);
+            if (!str)
+                return (NULL);
+        }
+        i++;
+    }
+    join = ft_substr(str, 0, i);
+    if (flag == 1)
+        token->word = ft_strjoin(token->word, join);
+    if (flag == 0)
+        token =  push_start(token, join); 
+    free(join);
+    tmp = ft_substr(str, i, ft_strlen(str) - i);
+    return (tmp);
+}
+
+static int parser(char *str, t_env *env, t_store *token)
+{
+    int i;
+    int flag;
+
+    i = 0;
+    flag = 0;
+    if (!str || *str == '\4' || *str == EOF)
+    {
+        printf("exit\n");
+        free_exit(token, env, 0);
+    }
+    while(*str == ' ' || *str == '\t')
+        str++;
+    while(str[i] && str[i] != '|' && str[i] != '>' && str[i] != '<')
+    {
+        if (str[i] == '\'')
+        {
+            str = single_quotes(str, &i);
+            i = i - 2;
+        }
+        if (str[i] == '\"')
+        {
+            str = double_quotes(str, &i, env);
+            i = i - 2;
+        }
+        if (str[i] == '$')
+        {
             str = process_dollar(str, &i, env);
             if (!str)
                 return (-1);
         }
-        if (str[i] == ' ' || str[i] == '\t')
-        {
-            if (!token->word)
-            {
-                token->word = ft_substr(str, 0, i);
-                if (!token->word)
-                    ft_error(1);
-            }
-            else
-                token = add_node_token(token, str, i);
-            while(str[i] == ' ' || str[i] == '\t')
-                i++;
-            if (i == ft_strlen(str))
-                return (0);
-            str = ft_substr(str, i, ft_strlen(str) - i);
-            i = -1;
-        }
+
+        i++;
+    }
+    if (i != 0)
+    {
+        flag = 1;
+        token->word = ft_substr(str, 0, i);
+        if (!token->word)
+            ft_error(1);
+        str = ft_substr(str, i, ft_strlen(str));
+        if (!str)
+            ft_error(1);
+    }
+    i = 0;
+    while (str[i])
+    {
         if (str[i] == '>' || str[i] == '<')
         {
-             if (i != 0)
-             {
-                if (!token->word)
-                {
-                    token->word = ft_substr(str, 0, i);
-                    if (!token->word)
-                        ft_error(1);
-                }
-                else
-                    token = add_node_token(token, str, i);
-                str = ft_substr(str, i, ft_strlen(str) - i);
-             }
-             str = process_redirect(str, env);
-             if (t_sh.fd == -1 || t_sh.fd2 == -1)
+            str = process_redirect(str, env, token);
+            if (!str)
                 return (-1);
-             i = -1;
+            i = -1;
+        }
+        if (str[i] == '|')
+        {
+            str = process_pipe(str, env, token);
+            if (!str)
+                return (-1);
+            i = -1;
+        }
+        if (str[i] != '>' && str[i] != '<' && str[i] != ' ' && str[i] != '|')
+        {
+            str = join_token(str, env, token, flag);
+            if (!str)
+                return (-1);
+            i = -1;
         }
         i++;
     }
-    if (!token->word)
-    {
-        token->word = ft_strdup(str);
-        if (!token->word)
-            ft_error(1);
-    }
-    else
-        token = add_node_token(token, str, ft_strlen(str));
+
+    // t_store *p;
+
+    // p = token;
+    // while(p)
+    // {
+    //     printf("%s\n", p->word);
+    //     p = p->next;
+    // }
+
     return (0);
 }
 
@@ -252,93 +306,130 @@ static void init_struct_store(t_store *token)
     token->next = NULL;
 }
 
-static int count_argument(t_store *token)
+// static int count_argument(t_store *token)
+// {
+//     t_store *p;
+//     int count;
+
+//     p = token;
+//     count = 0;
+//     while(p != NULL)
+//     {
+//         count++;
+//         p = p->next;
+//     }
+//     return (count);
+// }
+
+char **split_token_word(char *word)
+{
+    char **argv;
+    int i;
+    int count_word;
+
+    i = 0;
+    count_word = 0;
+    while(word[i])
+    {
+        if (word[i] == ' ')
+        {
+            while(word[i] == ' ')
+                i++;
+            count_word++;
+        }
+        i++;
+    }
+    count_word++;
+    argv = ft_split(word, ' ');
+    if (!argv)
+        ft_error(1);
+    // i = 0;
+    // while(argv[i])
+    // {
+    //     printf("%s\n", argv[i]);
+    //     i++;
+    // }
+    return (argv);
+
+}
+
+int count_argument(char **argv)
+{
+    int i;
+
+    i = 0;
+    while(argv[i])
+        i++;
+    return (i);
+}
+
+int check_redirect(t_store *token, t_env *env)
 {
     t_store *p;
-    int count;
 
     p = token;
-    count = 0;
-    while(p != NULL)
+    while(p)
     {
-        count++;
+        if (!ft_strncmp(p->word, ">", 1) || !ft_strncmp(p->word, "<", 1))
+            our_redirect(p->word, env, token);
         p = p->next;
     }
-    return (count);
 }
 
-int execute_command(t_env *env, t_env * export, t_store *token, char **envp)
-{
-    t_store *p;
-    int n_flag;
-    int count;
 
-    n_flag = 0;
-    count = count_argument(token);
-    if (ft_strcmp(token->word, "echo") == 0)
-    {
-        p = token->next;
-        if (!p)
-            our_echo(NULL);
-        if (ft_strcmp(p->word, "-n") == 0)
-        {
-            p = p->next;
-            n_flag = 1;
-        }
-      
-        while(p != NULL)
-        {
-            our_echo(p->word);
-            p = p->next;
-            printf(" ");
-        }
-        if (n_flag == 0)
-            printf("\n");
+int execute_command(t_env *env, t_env *export, t_store *token, char **envp)
+{
+    int count;
+    char **argv;
+
+    // проверка на редиректы
+    // проверка на пайпы
+    if (!token->word)
         return (0);
-    }
-    else if (ft_strcmp(token->word, "pwd") == 0)
-        our_pwd();
-    else if (ft_strcmp(token->word, "cd") == 0)
+    
+    check_redirect(token, env);
+
+
+
+    // если первый токен не является редиректом или пайпом:
+    if (strncmp(token->word, ">", 1) && strncmp(token->word, "<", 1) && strncmp(token->word, "|", 1))
     {
-        p = token->next;
-        if (count != 1)
-            our_cd(count, p->word, env, export);
-        else
-            our_cd(count, NULL, env, export);
-    }
-    else if (ft_strcmp(token->word, "export") == 0)
-        our_export(env, export, token);
-    else if (ft_strcmp(token->word, "unset") == 0)
-        our_unset(env, export, token);
-    else if (ft_strcmp(token->word, "env") == 0)
-    {
-        p = token->next;
-        if (p)
-        {
-            printf("env: %s: No such file or directory\n", p->word);
-            return (0);
-        }
-        our_env(env);
-    }
-    else if (ft_strcmp(token->word, "$?") == 0)
-    {
-       printf("%d: command not found\n", t_sh.exit_code);
-        return (0);
-    }
-    else if (ft_strcmp(token->word, "exit") == 0)
-    {
-        free_exit(token, env, 0);
+        argv = split_token_word(token->word);
+        count = count_argument(argv);
     }
     else
+        argv = NULL;
+    
+    if (argv)
     {
-        if (!token || ft_strcmp(token->word, "\0") == 0)
+        if (ft_strncmp(token->word, "echo", 4) == 0)
+            our_echo(argv);
+        else if (ft_strncmp(token->word, "pwd", 3) == 0)
+            our_pwd(argv);
+        else if (ft_strncmp(token->word, "cd", 2) == 0)
+            our_cd(count, argv, env, export);
+        else if (ft_strncmp(token->word, "export", 6) == 0)
+            our_export(count, env, export, argv);
+        else if (ft_strncmp(token->word, "unset", 5) == 0)
+            our_unset(env, export, argv, count);
+        else if (ft_strncmp(token->word, "env", 3) == 0)
+             our_env(env, argv, count);
+        else if (ft_strcmp(token->word, "$?") == 0)
+        {
+            ft_putstr_fd("minishell: ",2);
+            ft_putnbr_fd(t_sh.exit_code , 2);
+            ft_putstr_fd(": command not found\n",2);
             return (0);
+        }
+        else if (ft_strcmp(token->word, "exit") == 0)
+            free_exit(token, env, 0);
         else
-            exec_bin(token, env, envp, count);
+            exec_bin(argv, env, envp);
+        
     }
+    t_sh.exit_code = 0;
     return (0);
 }
-
 
 t_env *add_node_env(t_env *env, char *key, char *value)
 {
@@ -410,6 +501,7 @@ void	init_mini()
 	t_sh.fork_status = 0;
     t_sh.fd = STDOUT_FILENO;
     t_sh.fd2 = STDIN_FILENO;
+    t_sh.pipe_flag = 0;
 }
 
 static void init_struct_env(t_env *env)
@@ -432,14 +524,26 @@ static void free_struct_store(t_store *token)
     }
 }
 
+void setup_term(void)
+{
+    struct termios mini;
+    tcgetattr(0, &mini);
+    mini.c_lflag &= ~ECHOCTL;
+    tcsetattr(0, TCSANOW, &mini);
+}
+
 int main(int argv, char **argc, char **envp)
 {
     char *str;
     t_store *token;
     t_env *env;
     t_env *export;
+
+    int fd_in_old;
+    int fd_out_old;
     
     init_mini();
+    setup_term();
     env = (t_env *)malloc(sizeof(t_env));
     if (!env)
         ft_error(1);
@@ -452,13 +556,16 @@ int main(int argv, char **argc, char **envp)
         ft_error(1);
     init_struct_env(export);
     fill_struct_env(envp, export);
-    // rl_catch_signals = 0;            //forbiden?
+    //rl_catch_signals = 0;            //forbiden?
     signal(SIGINT, (void *) our_sig_proc);
 	signal(SIGQUIT, (void *)our_sig_proc);
     while (1)
     {
+        t_sh.pipe_flag = 0;
         t_sh.fd = STDOUT_FILENO;
         t_sh.fd2 = STDIN_FILENO;
+        fd_in_old = dup(STDIN_FILENO);
+        fd_out_old = dup(STDOUT_FILENO);
         token = (t_store *)malloc(sizeof(t_store));
         if (!token)
             ft_error(1);
@@ -473,14 +580,11 @@ int main(int argv, char **argc, char **envp)
         }
         add_history(str);
         if (parser(str, env, token) != -1)
-        {
-            dup2(t_sh.fd, STDOUT_FILENO);
-            dup2(t_sh.fd2, STDIN_FILENO);
             execute_command(env, export, token, envp);
-        }
         free(str);
         free_struct_store(token);
+        dup2(fd_out_old, 1);
+        dup2(fd_in_old, 0);
     }
-    // free_struct(env); // прописать перед всеми выходами
     return (0);
 }

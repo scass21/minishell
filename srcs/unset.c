@@ -30,22 +30,38 @@ static int search_key(char *key, t_env *env)
     return (flag);
 }
 
-int our_unset(t_env *env, t_env *export, t_store *token)
+static int check_argv(char **argv)
 {
-    t_store *token2;
+	int count;
 
-    token2 = token->next;
+	count = 0;
+	while(argv[count])
+		count++;
+	if (count == 1 && ft_strlen(argv[0]) > 5)
+		return (0);
+	return (1);
+}
 
-    while(token2)
+int our_unset(t_env *env, t_env *export, char **argv, int count)
+{
+    int i;
+
+    i = 1;
+    if (!check_argv(argv))
+	{
+        print_error(argv[0]);
+		return (0);
+	}
+    while(i < count)
     {
-        if (check_export_argument(token2->word) == -1)
+        if (check_export_argument(argv[i]) == -1)
         {
-            printf("minishell: unset: `%s': not a valid identifier\n", token2->word);
+            printf("minishell: unset: `%s': not a valid identifier\n", argv[i]);
             return (0);
         }
-        search_key(token2->word, env);
-        search_key(token2->word, export);
-        token2 = token2->next;
+        search_key(argv[i], env);
+        search_key(argv[i], export);
+        i++;
     }
     return (0);
 }

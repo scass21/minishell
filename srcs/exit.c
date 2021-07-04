@@ -21,8 +21,10 @@ void free_struct_env(t_env *env)
 		while(env != NULL)
 		{
 			temp = env;
-			free(temp->key);
-			free(temp->value);
+			if (temp->key)
+				free(temp->key);
+			if (temp->value && ft_strcmp(temp->value, "\0"))
+				free(temp->value);
 			env = env->next;
 		}
 	}

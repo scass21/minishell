@@ -4,7 +4,7 @@
 
 // # include <curses.h>
 # include <signal.h>
-// # include <term.h>
+# include <term.h>
 # include <string.h>
 # include <unistd.h>
 # include <stdlib.h>
@@ -30,6 +30,7 @@ typedef struct          s_store
 {
     char                *word;
     struct s_store      *next;
+	struct s_store      *previous;
 }                       t_store;
 
 
@@ -43,6 +44,7 @@ typedef	struct s_minishell
 	int					exit_code;
 	int					fd;
 	int					fd2;
+	int					pipe_flag;
 	// int					win_col;
 	// int					win_row;
 	// int					col;
@@ -51,23 +53,30 @@ typedef	struct s_minishell
 	// char				*ce;
 	// char				*dc;
 
-	int					sig_flag_int;
-	int					sig_flag_quit;
+	// int					sig_flag_int;
+	// int					sig_flag_quit;
 
 }						t_shell;
 
 t_shell                 t_sh;
 
 void	our_sig_proc(int sig);
-int 	our_unset(t_env *env, t_env *export, t_store *token);
-int		exec_bin(t_store *token, t_env *env_value, char **env, int count);
-int		our_echo(char *argument);
-int		our_pwd(void);
-int 	our_env(t_env *env);
-int     our_cd(int argc, char *path, t_env *env, t_env *export);
-int		our_export(t_env *env, t_env *export, t_store *token);
+// int 	our_unset(t_env *env, t_env *export, t_store *token);
+int our_unset(t_env *env, t_env *export, char **argv, int count);
+// int		exec_bin(t_store *token, t_env *env_value, char **env, int count);
+int		exec_bin(char **argv, t_env *env_value, char **env);
+int		our_echo(char **argv);
+int		our_pwd(char **argv);
+// int 	our_env(t_env *env);
+int our_env(t_env *env, char **argv, int count);
+// int     our_cd(int argc, char *path, t_env *env, t_env *export);
+int	our_cd(int argc, char **argv, t_env *env, t_env *export);
+// int		our_export(t_env *env, t_env *export, t_store *token);
+int	our_export(int count, t_env *env, t_env * export, char **argv);
+void print_error(char *str);
 
-char *process_redirect(char *str, t_env *env);
+char *process_redirect(char *str, t_env *env, t_store *store);
+int our_redirect(char *word, t_env *env, t_store *token);
 
 int		free_exit(t_store *store, t_env *env, int code);
 void rl_replace_line();
@@ -86,6 +95,8 @@ int execute_command(t_env *env, t_env * export, t_store *token, char **envp);
 // void our_redirect(t_env *env, t_env *export, t_store *token, char **envp);
 // char *process_redirect(char *str, t_env *env);
 char *process_value(char *val, t_env *env);
+char *process_pipe(char *str, t_env *env, t_store *token);
+int if_pipe(t_store *token, char **envp, t_env *export, t_env *env);
 
 
 #endif

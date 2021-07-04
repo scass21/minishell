@@ -8,3 +8,11 @@ void ft_error(int code)
         printf("Can't read file\n");
     exit(EXIT_FAILURE);
 }
+
+
+void print_error(char *str)
+{
+    ft_putstr_fd("minishell: ",2);
+    ft_putstr_fd(str, 2);
+    ft_putstr_fd(": command not found\n",2);
+}

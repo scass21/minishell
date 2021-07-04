@@ -1,24 +1,5 @@
 # include "minishell.h"
 
-char	**make_arg(t_store *token, int count)
-{
-	char **array;
-    t_store *temp;
-	int j;
-
-	j = 0;
-    array = (char **)malloc(sizeof(char *) * (count + 1));
-    temp = token;
-    while (temp)
-    {
-        array[j] = ft_strdup(temp->word);
-        temp = temp->next;
-        j++;
-    }
-	array[j] = NULL;
-    return (array);
-}
-
 char	*find_path(t_env *env, char *bin)
 {
 	t_env	*tmp;
@@ -74,15 +55,12 @@ char	*make_path(char *arg, t_env *env)
 	return (path);
 }
 
-int		exec_bin(t_store *token, t_env *env_value, char **env, int count)
+int		exec_bin(char **arg, t_env *env_value, char **env)
 {
 	pid_t	pid;
 	int		status;
 	char	*path;
-	char	**arg;
 	
-	arg = NULL;
-	arg = make_arg(token, count);
 	path = make_path(arg[0], env_value);
 	pid = fork();
 	signal(SIGINT, our_sig_proc);
@@ -92,7 +70,6 @@ int		exec_bin(t_store *token, t_env *env_value, char **env, int count)
 		t_sh.fork_status = 1;
 		if (execve(path, arg, env) < 0)
 		{
-			printf("%d", errno);
 			if (errno == 2 || errno == 14)
 				printf("%s: command not found\n", arg[0]);
 			else

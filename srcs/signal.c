@@ -1,4 +1,4 @@
-#include "minishell.h"
+# include "minishell.h"
 
 void	our_sig_proc(int sig)
 {
@@ -16,5 +16,7 @@ void	our_sig_proc(int sig)
 	else if (sig == SIGQUIT)
 	{
 		t_sh.exit_code = 131;
+		rl_on_new_line();
+		rl_redisplay();
 	}
 }

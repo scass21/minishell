@@ -31,39 +31,55 @@ static void change_env(t_env *env, char *path)
 	}
 }
 
-int	our_cd(int argc, char *path, t_env *env, t_env *export)			//argc - количество аргументов для cd
+static int check_argv(char **argv)
+{
+	int count;
+
+	count = 0;
+	while(argv[count])
+		count++;
+	if (count == 1 && ft_strlen(argv[0]) > 2)
+		return (0);
+	return (1);
+}
+
+int	our_cd(int argc, char **argv, t_env *env, t_env *export)			//argc - количество аргументов для cd
 {
 	char *r_path;
 	char dir[4096];
 
 	r_path = NULL;
-	if (argc > 2)
+	if (!check_argv(argv))
 	{
-		printf("cd: too many arguments\n");
+		print_error(argv[0]);
 		return (0);
 	}
+	// if (argc > 2)
+	// {
+	// 	printf("cd: too many arguments\n");
+	// 	return (0);
+	// }
 	if (argc == 1)
 	{
-		path = getenv("HOME");
-		if(chdir(path) < 0)
-			printf("%s\n", strerror(errno));
+		argv[0] = getenv("HOME");
+		if(chdir(argv[0]) < 0)
+			print_error(strerror(errno));
 	}
-	if (argc == 2)	
+	if (argc >= 2)	
 	{
-		if (ft_strncmp(path, "~", 1) == 0)
+		if (ft_strncmp(argv[1], "~", 1) == 0)
 		{
-			path++;
 			r_path = ft_strdup(getenv("HOME"));
-			r_path = ft_strjoin(r_path, path);
-			path = r_path;
+			r_path = ft_strjoin(r_path, argv[1]);
+			argv[1] = r_path;
 			
 		}
-		if (chdir(path) < 0)
-			printf("%s\n", strerror(errno));
+		if (chdir(argv[1]) < 0)
+			print_error(strerror(errno));
 	}
-	path = getcwd(dir, 4096);
-	change_env(env, path);
-	change_env(export, path);
+	argv[1] = getcwd(dir, 4096);
+	change_env(env, argv[1]);
+	change_env(export, argv[1]);
 	return (0);
 }
 

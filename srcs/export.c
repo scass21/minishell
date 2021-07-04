@@ -138,36 +138,37 @@ char *get_value(char *token)
     return(value);
 }
 
-static int process_export(t_store *next_token, t_env *env, t_env *export)
+static int process_export(int count, char **argv, t_env *env, t_env *export)
 {
     char *key;
     char *value;
+    int i;
 
     key = NULL;
     value = NULL;
-    while(next_token)
+    i = 1;
+
+    while (i < count)
     {
-        if (check_export_argument(next_token->word) == -1)
+        if (check_export_argument(argv[i]) == -1)
         {
-            printf("minishell: export: `%s': not a valid identifier\n", next_token->word);
+            printf("minishell: export: `%s': not a valid identifier\n", argv[i]);
             return (0);
         }
-        if (ft_strchr(next_token->word, '='))
+        if (ft_strchr(argv[i], '='))
         {
-            key = get_key(next_token->word);
-            value = get_value(next_token->word);
+            key = get_key(argv[i]);
+            value = get_value(argv[i]);
             add_env_and_export(key, value, env, export);
         }
         else
         {
-            key = ft_strdup(next_token->word);
+            key = ft_strdup(argv[i]);
             if (check_repeat(key, value, export) == 0)
                 export = add_node_env(export, key, value);
         }
-        next_token = next_token->next;
+        i++;
     }
-
-
     return (0);
 }
 
@@ -218,25 +219,36 @@ static void print_declare_export(t_env *export)
     while(tmp != NULL)
     {
         printf("declare -x %s", tmp->key);
-        if (tmp->value)
-            printf("=\"%s\"\n", tmp->value);
-        else
+        if (!strcmp(tmp->value, "\0"))
             printf("\n");
+        else
+            printf("=\"%s\"\n", tmp->value);
         tmp = tmp->next;
     }
 }
 
-int	our_export(t_env *env, t_env * export, t_store *token)
+static int check_argv(char **argv)
 {
-    t_store *next_token;
+	int count;
 
-    next_token = token->next;
-    if (!next_token)
-    {
+	count = 0;
+	while(argv[count])
+		count++;
+	if (count == 1 && ft_strlen(argv[0]) > 6)
+		return (0);
+	return (1);
+}
+
+int	our_export(int count, t_env *env, t_env * export, char **argv)
+{
+    if (!check_argv(argv))
+	{
+		print_error(argv[0]);
+		return (0);
+	}
+    if (count == 1)
         print_declare_export(export);
-        return (0);
-    }
-    if (process_export(next_token, env, export) == 0)
-        return (0);
+    else
+        process_export(count, argv, env, export);
     return (0);
 }
