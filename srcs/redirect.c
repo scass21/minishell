@@ -203,13 +203,13 @@ int our_redirect(char *word, t_env *env, t_store *token)
     int fd_in;
     int fd_out;
 
-    char *buf;
-    int r;
+    // char *buf;
+    // int r;
 
-    r = 0;
-    buf = (char *)malloc(sizeof(char));
-    if (!buf)
-        ft_error(1);
+    // r = 0;
+    // buf = (char *)malloc(sizeof(char));
+    // if (!buf)
+    //     ft_error(1);
 
 
     i = 0;
@@ -257,24 +257,18 @@ int our_redirect(char *word, t_env *env, t_store *token)
         if (fd_in == -1)
             printf("%s\n", strerror(errno));
     }
-    else if (word[i] == '<' && word[i + 1] == '>')
+    else if (word[i] == '<' && word[i + 1] == '<')
     {
+        word++;
+        word++;
+        while(*word == ' ' || *word == '\t')
+            word++;
         filename = ft_substr(word, 0, ft_strlen(word));
         if (!filename)
             ft_error(1);
-        filename = ft_strjoin(filename, "\n");
-        r = read(fd_in, buf, BUFFER_SIZE);
-        if (r == -1)
-            ft_error(2);
-        while(r > 0)
-        {
-            if (ft_strcmp(buf, filename) == 0)
-                break;
-            free(buf);
-            buf = (char *)malloc(sizeof(char));
-            r = read(fd_in, buf, BUFFER_SIZE);
-        }
-        free(buf);
+        fd_out = open(filename, O_RDWR | O_CREAT | O_EXCL, 0644);
+        if (fd_out == -1)
+            printf("%s\n", strerror(errno));
     }
     dup2(fd_out, 1);
     dup2(fd_in, 0);

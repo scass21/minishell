@@ -36,9 +36,30 @@ char 	*check_path(char **tmp, char *arg)
 			}
 		}
 		i++;
-		closedir(dir);		
+		if (dir)
+			closedir(dir);		
 	}
 	return ("");
+}
+
+char	*make_path_home(char *arg)
+{
+	DIR 	*dir;
+	struct dirent *bin;
+	dir = opendir(getenv("PWD"));
+	while (dir)
+	{
+		bin = readdir(dir);
+		if (bin == 0)
+			break ;
+		else if (ft_strcmp(bin->d_name, arg) == 0)
+		{
+			closedir(dir);
+			return(getenv("PWD"));
+		}
+	}
+	closedir(dir);
+	return("");
 }
 
 char	*make_path(char *arg, t_env *env)
@@ -47,11 +68,20 @@ char	*make_path(char *arg, t_env *env)
 	char	**tmp;
 	char	*bin;
 
-	bin = find_path(env, "PATH");
-	tmp = ft_split(bin, ':');
-	path = ft_strdup(check_path(tmp, arg));
+	if (ft_strncmp(arg, "./", 2) == 0)
+	{
+		arg = ft_substr(arg, 2, (ft_strlen(arg) - 2));
+		path = ft_strdup(make_path_home(arg));
+	}
+	else
+	{
+		bin = find_path(env, "PATH");
+		tmp = ft_split(bin, ':');
+		path = ft_strdup(check_path(tmp, arg));
+	}
 	path = ft_strjoin(path, "/");
 	path = ft_strjoin(path, arg);
+	
 	return (path);
 }
 
@@ -71,9 +101,9 @@ int		exec_bin(char **arg, t_env *env_value, char **env)
 		if (execve(path, arg, env) < 0)
 		{
 			if (errno == 2 || errno == 14)
-				printf("%s: command not found\n", arg[0]);
+				print_error(arg[0]);
 			else
-				printf("%s\n", strerror(errno));
+				print_error(strerror(errno));
 			t_sh.fork_status = 0;
 			exit(1);
 		}
@@ -82,7 +112,7 @@ int		exec_bin(char **arg, t_env *env_value, char **env)
 	}
 	else if (pid < 0)
 	{
-		printf("%s\n", strerror(errno));
+		print_error(strerror(errno));
 		exit(1);
 	}
 	else

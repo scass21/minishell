@@ -58,20 +58,23 @@ typedef	struct s_minishell
 
 }						t_shell;
 
+typedef struct s_all
+{
+	t_env *env;
+	t_env *export;
+	t_store *token;
+	t_shell *shell;
+}				t_all;
+
 t_shell                 t_sh;
 
 void	our_sig_proc(int sig);
-// int 	our_unset(t_env *env, t_env *export, t_store *token);
 int our_unset(t_env *env, t_env *export, char **argv, int count);
-// int		exec_bin(t_store *token, t_env *env_value, char **env, int count);
 int		exec_bin(char **argv, t_env *env_value, char **env);
 int		our_echo(char **argv);
 int		our_pwd(char **argv);
-// int 	our_env(t_env *env);
 int our_env(t_env *env, char **argv, int count);
-// int     our_cd(int argc, char *path, t_env *env, t_env *export);
 int	our_cd(int argc, char **argv, t_env *env, t_env *export);
-// int		our_export(t_env *env, t_env *export, t_store *token);
 int	our_export(int count, t_env *env, t_env * export, char **argv);
 void print_error(char *str);
 
@@ -92,8 +95,6 @@ void    ft_error(int code);
 
 t_store *add_node_token(t_store *token, char *str, int i);
 int execute_command(t_env *env, t_env * export, t_store *token, char **envp);
-// void our_redirect(t_env *env, t_env *export, t_store *token, char **envp);
-// char *process_redirect(char *str, t_env *env);
 char *process_value(char *val, t_env *env);
 char *process_pipe(char *str, t_env *env, t_store *token);
 int if_pipe(t_store *token, char **envp, t_env *export, t_env *env);
@@ -102,4 +103,4 @@ int if_pipe(t_store *token, char **envp, t_env *export, t_env *env);
 #endif
 
 
-//gcc -g -Wall -Wextra lexer.c cd.c echo.c env.c error.c exec.c exit.c export.c pwd.c signal.c unset.c -lreadline ../libft/libft.a -L/Users/lkasandr/.brew/Cellar/readline/8.1/lib/
+//gcc -g -Wall -Wextra lexer.c cd.c echo.c env.c error.c exec.c exit.c export.c pwd.c signal.c unset.c -lreadline ../libft/libft.a -L/Users/lkasandr/.brew/Cellar/readline/8.1/lib/ redirect.c pipe.c 

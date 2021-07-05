@@ -163,7 +163,7 @@ t_store *add_node_token(t_store *token, char *str, int i)
     return (p);
 }
 
-t_store *push_start(t_store *token, char *join)
+void push_start(t_store **token, char *join)
 {
     t_store *p;
 
@@ -171,8 +171,9 @@ t_store *push_start(t_store *token, char *join)
     if (!p)
         ft_error(1);
     p->word = ft_strdup(join);
-    p->next = token;
-    return (p);
+    p->next = (*token);
+    // return (p);
+    (*token) = p;
 }
 
 char *join_token(char *str, t_env *env, t_store *token, int flag)
@@ -209,9 +210,11 @@ char *join_token(char *str, t_env *env, t_store *token, int flag)
     if (flag == 1)
         token->word = ft_strjoin(token->word, join);
     if (flag == 0)
-        token =  push_start(token, join); 
+        push_start(&token, join); 
     free(join);
     tmp = ft_substr(str, i, ft_strlen(str) - i);
+    if (!tmp)
+        return (NULL);
     return (tmp);
 }
 
@@ -306,21 +309,6 @@ static void init_struct_store(t_store *token)
     token->next = NULL;
 }
 
-// static int count_argument(t_store *token)
-// {
-//     t_store *p;
-//     int count;
-
-//     p = token;
-//     count = 0;
-//     while(p != NULL)
-//     {
-//         count++;
-//         p = p->next;
-//     }
-//     return (count);
-// }
-
 char **split_token_word(char *word)
 {
     char **argv;
@@ -374,6 +362,7 @@ int check_redirect(t_store *token, t_env *env)
             our_redirect(p->word, env, token);
         p = p->next;
     }
+    return (1);
 }
 
 
@@ -424,8 +413,7 @@ int execute_command(t_env *env, t_env *export, t_store *token, char **envp)
         else if (ft_strcmp(token->word, "exit") == 0)
             free_exit(token, env, 0);
         else
-            exec_bin(argv, env, envp);
-        
+                exec_bin(argv, env, envp);
     }
     t_sh.exit_code = 0;
     return (0);
@@ -532,8 +520,19 @@ void setup_term(void)
     tcsetattr(0, TCSANOW, &mini);
 }
 
+// void init_all_struct(t_all *all)
+// {
+//     t_env *env;
+
+// }
+
+
 int main(int argv, char **argc, char **envp)
 {
+    // t_all *all;
+
+    // init_struct_all(all);
+    
     char *str;
     t_store *token;
     t_env *env;
@@ -562,8 +561,6 @@ int main(int argv, char **argc, char **envp)
     while (1)
     {
         t_sh.pipe_flag = 0;
-        t_sh.fd = STDOUT_FILENO;
-        t_sh.fd2 = STDIN_FILENO;
         fd_in_old = dup(STDIN_FILENO);
         fd_out_old = dup(STDOUT_FILENO);
         token = (t_store *)malloc(sizeof(t_store));
