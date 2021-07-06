@@ -166,17 +166,24 @@ t_store *add_node_token(t_store *token, char *str, int i)
 void push_start(t_store **token, char *join)
 {
     t_store *p;
+    // t_store *tmp;
 
     p = (t_store *)malloc(sizeof(t_store));
     if (!p)
         ft_error(1);
+    // tmp = (*token);
+    // tmp->next = (*token)->word;
+
     p->word = ft_strdup(join);
-    p->next = (*token);
-    // return (p);
-    (*token) = p;
+    p->next = *token;
+    // tmp->next = p;
+    // p = tmp;
+    // в next 2-го записать 1й элемент
+    // в next 1-го записать tmp
+    *token = p;
 }
 
-char *join_token(char *str, t_env *env, t_store *token, int flag)
+char *join_token(char *str, t_env *env, t_store **token, int flag)
 {
     char *tmp;
     char *join;
@@ -208,9 +215,9 @@ char *join_token(char *str, t_env *env, t_store *token, int flag)
     }
     join = ft_substr(str, 0, i);
     if (flag == 1)
-        token->word = ft_strjoin(token->word, join);
+        (*token)->word = ft_strjoin((*token)->word, join);
     if (flag == 0)
-        push_start(&token, join); 
+        push_start(token, join); 
     free(join);
     tmp = ft_substr(str, i, ft_strlen(str) - i);
     if (!tmp)
@@ -218,7 +225,7 @@ char *join_token(char *str, t_env *env, t_store *token, int flag)
     return (tmp);
 }
 
-static int parser(char *str, t_env *env, t_store *token)
+static int parser(char *str, t_env *env, t_store **token)
 {
     int i;
     int flag;
@@ -227,8 +234,8 @@ static int parser(char *str, t_env *env, t_store *token)
     flag = 0;
     if (!str || *str == '\4' || *str == EOF)
     {
-        printf("exit\n");
-        free_exit(token, env, 0);
+        printf("\033[Aminishell$ exit\n");
+        free_exit(*token, env, 0);
     }
     while(*str == ' ' || *str == '\t')
         str++;
@@ -256,8 +263,8 @@ static int parser(char *str, t_env *env, t_store *token)
     if (i != 0)
     {
         flag = 1;
-        token->word = ft_substr(str, 0, i);
-        if (!token->word)
+        (*token)->word = ft_substr(str, 0, i);
+        if (!(*token)->word)
             ft_error(1);
         str = ft_substr(str, i, ft_strlen(str));
         if (!str)
@@ -268,14 +275,14 @@ static int parser(char *str, t_env *env, t_store *token)
     {
         if (str[i] == '>' || str[i] == '<')
         {
-            str = process_redirect(str, env, token);
+            str = process_redirect(str, env, *token);
             if (!str)
                 return (-1);
             i = -1;
         }
         if (str[i] == '|')
         {
-            str = process_pipe(str, env, token);
+            str = process_pipe(str, env, *token);
             if (!str)
                 return (-1);
             i = -1;
@@ -290,14 +297,14 @@ static int parser(char *str, t_env *env, t_store *token)
         i++;
     }
 
-    // t_store *p;
+    t_store *p;
 
-    // p = token;
-    // while(p)
-    // {
-    //     printf("%s\n", p->word);
-    //     p = p->next;
-    // }
+    p = (*token);
+    while(p)
+    {
+        printf("%s\n", p->word);
+        p = p->next;
+    }
 
     return (0);
 }
@@ -319,6 +326,11 @@ char **split_token_word(char *word)
     count_word = 0;
     while(word[i])
     {
+        if (word[i] == '|')
+		{
+            word[i] = ' ';
+            i++;
+        }
         if (word[i] == ' ')
         {
             while(word[i] == ' ')
@@ -359,63 +371,82 @@ int check_redirect(t_store *token, t_env *env)
     while(p)
     {
         if (!ft_strncmp(p->word, ">", 1) || !ft_strncmp(p->word, "<", 1))
-            our_redirect(p->word, env, token);
+        {
+            if (!our_redirect(p->word, env, token))
+                return (0);
+        }
         p = p->next;
     }
     return (1);
 }
 
 
-int execute_command(t_env *env, t_env *export, t_store *token, char **envp)
+int     command_handler(t_env *env, t_env *export, t_store *token, char **envp)
 {
     int count;
     char **argv;
 
-    // проверка на редиректы
-    // проверка на пайпы
-    if (!token->word)
-        return (0);
-    
-    check_redirect(token, env);
-
-
-
-    // если первый токен не является редиректом или пайпом:
-    if (strncmp(token->word, ">", 1) && strncmp(token->word, "<", 1) && strncmp(token->word, "|", 1))
+    if (strncmp(token->word, ">", 1) && strncmp(token->word, "<", 1))
     {
         argv = split_token_word(token->word);
         count = count_argument(argv);
     }
     else
         argv = NULL;
-    
     if (argv)
     {
-        if (ft_strncmp(token->word, "echo", 4) == 0)
+        
+        if (ft_strncmp(argv[0], "echo", 4) == 0)
             our_echo(argv);
-        else if (ft_strncmp(token->word, "pwd", 3) == 0)
+        else if (ft_strncmp(argv[0], "pwd", 3) == 0)
             our_pwd(argv);
-        else if (ft_strncmp(token->word, "cd", 2) == 0)
+        else if (ft_strncmp(argv[0], "cd", 2) == 0)
             our_cd(count, argv, env, export);
-        else if (ft_strncmp(token->word, "export", 6) == 0)
+        else if (ft_strncmp(argv[0], "export", 6) == 0)
             our_export(count, env, export, argv);
-        else if (ft_strncmp(token->word, "unset", 5) == 0)
+        else if (ft_strncmp(argv[0], "unset", 5) == 0)
             our_unset(env, export, argv, count);
-        else if (ft_strncmp(token->word, "env", 3) == 0)
+        else if (ft_strncmp(argv[0], "env", 3) == 0)
              our_env(env, argv, count);
-        else if (ft_strcmp(token->word, "$?") == 0)
+        else if (ft_strcmp(argv[0],  "$?") == 0)
         {
             ft_putstr_fd("minishell: ",2);
             ft_putnbr_fd(t_sh.exit_code , 2);
             ft_putstr_fd(": command not found\n",2);
             return (0);
         }
-        else if (ft_strcmp(token->word, "exit") == 0)
+        else if (ft_strcmp(argv[0], "exit") == 0)
             free_exit(token, env, 0);
         else
-                exec_bin(argv, env, envp);
+            exec_bin(argv, env, envp);
+        
     }
     t_sh.exit_code = 0;
+    return (0);
+
+}
+
+int execute_command(t_env *env, t_env *export, t_store *token, char **envp)
+{
+    int count;
+    char **argv;
+
+    if (!token->word)
+        return (0);
+    if (!check_redirect(token, env))
+        return (0);
+
+    // if (token->next)
+    // {
+    //     // while(token->next)
+    //     // {
+    //         // printf("token %s\n", token->word);
+    //         pipe_proc(token->word, env, envp, export, token);
+    //     //     token = token->next;
+    //     // }   
+    // }
+    // else
+        command_handler(env, export, token, envp);
     return (0);
 }
 
@@ -570,13 +601,13 @@ int main(int argv, char **argc, char **envp)
         init_struct_store(token);
        
         str = readline("minishell$ ");
-        if (!str || *str == '\4' || *str == EOF)
-        {
-            printf("exit\n");
-            free_exit(token, env, 0);
-        }
+        // if (!str || *str == '\4' || *str == EOF)
+        // {
+        //     printf("exit\n");
+        //     free_exit(token, env, 0);
+        // }
         add_history(str);
-        if (parser(str, env, token) != -1)
+        if (parser(str, env, &token) != -1)
             execute_command(env, export, token, envp);
         free(str);
         free_struct_store(token);

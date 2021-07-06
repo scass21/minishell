@@ -99,6 +99,9 @@ char *process_value(char *val, t_env *env);
 char *process_pipe(char *str, t_env *env, t_store *token);
 int if_pipe(t_store *token, char **envp, t_env *export, t_env *env);
 
+int     command_handler(t_env *env, t_env *export, t_store *token, char **envp);
+int pipe_proc(char *str, t_env *env, char **envp, t_env *export, t_store *token);
+
 
 #endif
 

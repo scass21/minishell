@@ -105,97 +105,7 @@ char *process_redirect(char *str, t_env *env, t_store *token)
     // ft_free(str);
     return (tmp);
 }
-    // char *tmp;
-    // char *filename;
-
-    // int r = 0;
-    // char *buf;
-
-
-    // tmp = NULL;
-    // filename = NULL;
-    // buf = (char *)malloc(sizeof(char));
-    // node = (t_store *)malloc(sizeof(t_store));
-    // if (!node)
-    //     ft_error(1);
-    // init_struct_store(node);
-    // if (*str == '>')
-    // {
-    //     str++;
-    //     if (*str != '>')
-    //     {
-    //         fill_struct_node(node, str, env);
-    //         filename = ft_strdup(node->word);
-    //         if (!filename)
-    //             ft_error(1);
-    //         filename = process_value(filename, env);
-    //         t_sh.fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    //         if (t_sh.fd == -1)
-    //             printf("%s\n", strerror(errno));
-    //         tmp = cat_str(node);
-    //         free(filename);
-    //         // free_struct_store(node);
-    //     }
-    //     if (*str == '>')
-    //     {
-    //         str++;
-    //         fill_struct_node(node, str, env);
-    //         filename = ft_strdup(node->word);
-    //         if (!filename)
-    //             ft_error(1);
-    //         t_sh.fd = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
-    //         if (t_sh.fd == -1)
-    //             printf("%s\n", strerror(errno));
-    //         tmp = cat_str(node);
-    //         free(filename);
-    //         // free_struct_store(node);
-    //     }
-    // }
-    // if (*str == '<')
-    // {
-    //     str++;
-    //     if (*str != '<')
-    //     {
-    //         fill_struct_node(node, str, env);
-    //         filename = ft_strdup(node->word);
-    //         if (!filename)
-    //             ft_error(1);
-    //         t_sh.fd2 = open(filename, O_RDONLY, 0644);
-    //         if (t_sh.fd2 == -1)
-    //             printf("%s\n", strerror(errno));
-    //         tmp = cat_str(node);
-    //         free(filename);
-    //         // free_struct_store(node);
-    //     }
-    //     if (*str == '<')
-    //     {
-    //         str++;
-    //         fill_struct_node(node, str, env);
-    //         filename = ft_strdup(node->word);
-    //         filename = ft_strjoin(filename, "\n");
-    //         if (!filename)
-    //             ft_error(1);
-    //         tmp = cat_str(node);
-    //         r = read(t_sh.fd2, buf, BUFFER_SIZE);
-    //         if (r == -1)
-    //             ft_error(2);
-    //         while(r > 0)
-    //         {
-    //             if (ft_strcmp(buf, filename) == 0)
-    //                 break;
-    //             ft_free(buf);
-    //             buf = (char *)malloc(sizeof(char));
-    //             r = read(t_sh.fd2, buf, BUFFER_SIZE);
-    //         }
-    //         ft_free(buf);
-    //         // // free_struct_store(node);
-    //     }
-    // }
-
-    // return (tmp);
-// }
-
-
+    
 int our_redirect(char *word, t_env *env, t_store *token)
 {
     int i;
@@ -227,7 +137,10 @@ int our_redirect(char *word, t_env *env, t_store *token)
         filename = process_value(filename, env);
         fd_out = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
         if (fd_out == -1)
+        {
             printf("%s\n", strerror(errno));
+            return (0);
+        }
         // printf("filename: %s\n", filename);
     }
     else if (word[i] == '>' && word[i + 1] == '>')
@@ -242,7 +155,10 @@ int our_redirect(char *word, t_env *env, t_store *token)
         filename = process_value(filename, env);
         fd_out = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
         if (fd_in == -1)
+        {
             printf("%s\n", strerror(errno));
+            return (0);
+        }
     }
     else if (word[i] == '<' && word[i + 1] != '<')
     {
@@ -255,7 +171,10 @@ int our_redirect(char *word, t_env *env, t_store *token)
         filename = process_value(filename, env);
         fd_in = open(filename, O_RDONLY, 0644);
         if (fd_in == -1)
+        {
             printf("%s\n", strerror(errno));
+            return (0);
+        }
     }
     else if (word[i] == '<' && word[i + 1] == '<')
     {
@@ -268,7 +187,10 @@ int our_redirect(char *word, t_env *env, t_store *token)
             ft_error(1);
         fd_out = open(filename, O_RDWR | O_CREAT | O_EXCL, 0644);
         if (fd_out == -1)
+        {
             printf("%s\n", strerror(errno));
+            return (0);
+        }
     }
     dup2(fd_out, 1);
     dup2(fd_in, 0);
