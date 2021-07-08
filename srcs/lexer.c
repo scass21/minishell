@@ -297,14 +297,14 @@ static int parser(char *str, t_env *env, t_store **token)
         i++;
     }
 
-    t_store *p;
+    // t_store *p;
 
-    p = (*token);
-    while(p)
-    {
-        printf("%s\n", p->word);
-        p = p->next;
-    }
+    // p = (*token);
+    // while(p)
+    // {
+    //     printf("%s\n", p->word);
+    //     p = p->next;
+    // }
 
     return (0);
 }
@@ -426,6 +426,27 @@ int     command_handler(t_env *env, t_env *export, t_store *token, char **envp)
 
 }
 
+int check_pipe(t_env *env, t_env *export, t_store *token, char **envp)
+{
+    t_store *p;
+    int if_pipe;
+
+    if_pipe = 0;
+    p = token;
+    while(p)
+    {
+        if (!ft_strncmp(p->word, "|", 1))
+            if_pipe = 1;
+        p = p->next;
+    }
+    if (if_pipe == 1)
+    {
+        pipe_proc(env, envp, export, token);
+        return (0);
+    }
+    return (1);
+}
+
 int execute_command(t_env *env, t_env *export, t_store *token, char **envp)
 {
     int count;
@@ -433,20 +454,11 @@ int execute_command(t_env *env, t_env *export, t_store *token, char **envp)
 
     if (!token->word)
         return (0);
+    if (!check_pipe(env, export, token, envp))
+        return (0);
     if (!check_redirect(token, env))
         return (0);
-
-    // if (token->next)
-    // {
-    //     // while(token->next)
-    //     // {
-    //         // printf("token %s\n", token->word);
-    //         pipe_proc(token->word, env, envp, export, token);
-    //     //     token = token->next;
-    //     // }   
-    // }
-    // else
-        command_handler(env, export, token, envp);
+    command_handler(env, export, token, envp);
     return (0);
 }
 
@@ -601,11 +613,6 @@ int main(int argv, char **argc, char **envp)
         init_struct_store(token);
        
         str = readline("minishell$ ");
-        // if (!str || *str == '\4' || *str == EOF)
-        // {
-        //     printf("exit\n");
-        //     free_exit(token, env, 0);
-        // }
         add_history(str);
         if (parser(str, env, &token) != -1)
             execute_command(env, export, token, envp);
