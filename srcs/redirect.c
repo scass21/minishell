@@ -96,7 +96,8 @@ char *process_redirect(char *str, t_env *env, t_store *token)
         }
         if (*str == '<')
         {
-            tmp = cut_redirect(str, env, token, 2);
+            tmp = cut_redirect(str, env, token, 2);     // поправить лексер для <<
+            
             if (!tmp)
                 return (NULL);
             return (tmp);
@@ -134,7 +135,6 @@ int our_redirect(char *word, t_env *env, t_store *token)
         filename = ft_substr(word, 0, ft_strlen(word));
         if (!filename)
             ft_error(1);
-        filename = process_value(filename, env);
         fd_out = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
         if (fd_out == -1)
         {
@@ -152,7 +152,6 @@ int our_redirect(char *word, t_env *env, t_store *token)
         filename = ft_substr(word, 0, ft_strlen(word));
         if (!filename)
             ft_error(1);
-        filename = process_value(filename, env);
         fd_out = open(filename, O_WRONLY | O_CREAT | O_APPEND, 0644);
         if (fd_in == -1)
         {
@@ -168,7 +167,6 @@ int our_redirect(char *word, t_env *env, t_store *token)
         filename = ft_substr(word, 0, ft_strlen(word));
         if (!filename)
             ft_error(1);
-        filename = process_value(filename, env);
         fd_in = open(filename, O_RDONLY, 0644);
         if (fd_in == -1)
         {
