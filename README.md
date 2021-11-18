@@ -1,3 +1,5 @@
+Created by SCASS and LKASANDR
+
 # minishell
 
 The objective of this project is create a simple shell.
