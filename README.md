@@ -1,5 +1,3 @@
-Created by SCASS and LKASANDR
-
 # minishell
 
 The objective of this project is create a simple shell.
@@ -48,3 +46,6 @@ Using `make` will create the minishell executable.
 Run it with :
 
     ./minishell
+   
+
+Created by SCASS and LKASANDR
