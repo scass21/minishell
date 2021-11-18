@@ -1,254 +1,77 @@
 #include "minishell.h"
 
-int check_export_argument(char *arg)
+void	sort_struct_2(t_env *min, t_env *tmp)
 {
-    int i;
-    int k;
-    char *str;
+	char	*key;
+	char	*value;
 
-    i = 1;
-    k = 0;
-    str = NULL;
-    if (!ft_isalpha(arg[0]) && arg[0] != '_')
-        return(-1);
-    if (ft_strchr(arg, '='))
-    {
-        while(arg[k])
-        {
-            if (arg[k] == '=')
-                break;
-            k++;
-        }
-        str = ft_substr(arg, 0, i);
-    }
-    else
-        str = arg;
-    while(str[i])
-    {
-        if (!ft_isalnum(str[i]) && str[i] != '_')
-            return (-1);
-        i++;
-    }
-    return(0);
+	key = tmp->key;
+	value = tmp->value;
+	tmp->key = min->key;
+	tmp->value = min->value;
+	min->key = key;
+	min->value = value;
 }
 
-static int check_repeat(char *key, char *value, t_env *env)
+void	sort_struct1(t_env *tmp)
 {
-    t_env *p;
-    int flag;
+	t_env	*min;
+	t_env	*r;
+	int		i;
 
-    p = env;
-    flag = 0;
-    while(p)
-    {
-        if (ft_strcmp(key, p->key) == 0)
-        {
-            free(p->key);
-            p->key = ft_strdup(key);
-            if (value)
-            {
-                free(p->value);
-                p->value = ft_strdup(value);
-            }
-            flag = 1;
-        }
-        p = p->next;
-    }
-    return(flag);
+	min = tmp;
+	r = tmp->next;
+	while (r)
+	{
+		i = 1;
+		while (i <= ft_strlen(min->key))
+		{
+			if (strncmp(min->key, r->key, i) > 0)
+			{
+				min = r;
+				break ;
+			}
+			i++;
+		}
+		r = r->next;
+	}
+	sort_struct_2(min, tmp);
 }
 
-char *process_value(char *val, t_env *env)
+void	sort_struct(t_env *export)
 {
-    int i;
+	t_env	*tmp;
 
-    i = 0;
-    while(val[i])
-    {
-        if (val[i] == '\'')
-        {
-            val = single_quotes(val, &i);
-            i = i - 2;
-        }
-        if (val[i] == '\"')
-        {
-            val = double_quotes(val, &i, env);
-            i = i - 2;
-        }
-        if (val[i] == '$')
-            val = process_dollar(val, &i, env);
-        i++;
-    }
-    return (val);
+	tmp = export;
+	while (tmp)
+	{
+		sort_struct1(tmp);
+		tmp = tmp->next;
+	}
 }
 
-static void add_env_and_export(char *key, char *value, t_env *env, t_env *export)
+int	check_argv(char **argv)
 {
-    char *val;
-
-    val = NULL;
-    if (value)
-        val = process_value(value, env);
-    if (check_repeat(key, val, env) == 0)
-        add_node_env(env, key, val);
-
-    if (check_repeat(key, val, export) == 0)
-        add_node_env(export, key, val);
-}
-
-char *get_key(char *token)
-{
-    char *key;
-    int i;
-
-    key = NULL;
-    i = 0;
-    while(token[i])
-    {
-        if (token[i] == '=')
-            break;
-        i++;
-    }
-    key = ft_substr(token, 0, i);
-    if (!key)
-        ft_error(1);
-    return(key);
-}
-
-char *get_value(char *token)
-{
-    char *value;
-    int i;
-    int len;
-
-    value = NULL;
-    i = 0;
-    len = ft_strlen(token);
-    while(token[i])
-    {
-        if (token[i] == '=')
-            break;
-        i++;
-    }
-    if (i != len - 1)
-    {
-        value = ft_substr(token, i + 1, len - i);
-        if (!value)
-            ft_error(1);
-    }
-    return(value);
-}
-
-static int process_export(int count, char **argv, t_env *env, t_env *export)
-{
-    char *key;
-    char *value;
-    int i;
-
-    key = NULL;
-    value = NULL;
-    i = 1;
-
-    while (i < count)
-    {
-        if (check_export_argument(argv[i]) == -1)
-        {
-            printf("minishell: export: `%s': not a valid identifier\n", argv[i]);
-            return (0);
-        }
-        if (ft_strchr(argv[i], '='))
-        {
-            key = get_key(argv[i]);
-            value = get_value(argv[i]);
-            add_env_and_export(key, value, env, export);
-        }
-        else
-        {
-            key = ft_strdup(argv[i]);
-            if (check_repeat(key, value, export) == 0)
-                export = add_node_env(export, key, value);
-        }
-        i++;
-    }
-    return (0);
-}
-
-static void sort_struct(t_env *export)
-{
-    t_env *tmp;
-    t_env *min;
-    t_env *r;
-    char *key;
-    char *value;
-    int i;
-
-    tmp = export;
-    while(tmp)
-    {
-        min = tmp;
-        r = tmp->next;
-        while(r)
-        {
-            i = 1;
-            while(i <= ft_strlen(min->key))
-            {
-                if (strncmp(min->key, r->key, i) > 0)
-                {
-                    min = r;
-                    break;
-                }
-                i++;
-            }
-            r = r->next;
-        }
-        key = tmp->key;
-        value = tmp->value;
-        tmp->key = min->key;
-        tmp->value = min->value;
-        min->key = key;
-        min->value = value;
-        tmp = tmp->next;
-    }
-}
-
-static void print_declare_export(t_env *export)
-{
-    t_env *tmp;
-
-    sort_struct(export);
-    tmp = export;
-    while(tmp != NULL)
-    {
-        printf("declare -x %s", tmp->key);
-        if (!strcmp(tmp->value, "\0"))
-            printf("\n");
-        else
-            printf("=\"%s\"\n", tmp->value);
-        tmp = tmp->next;
-    }
-}
-
-static int check_argv(char **argv)
-{
-	int count;
+	int	count;
 
 	count = 0;
-	while(argv[count])
+	while (argv[count])
 		count++;
 	if (count == 1 && ft_strlen(argv[0]) > 6)
 		return (0);
 	return (1);
 }
 
-int	our_export(int count, t_env *env, t_env * export, char **argv)
+int	our_export(int count, t_env *env, t_env *export, char **argv)
 {
-    if (!check_argv(argv))
+	if (!check_argv(argv))
 	{
 		print_error(argv[0]);
 		return (0);
 	}
-    if (count == 1)
-        print_declare_export(export);
-    else
-        process_export(count, argv, env, export);
-    return (0);
+	if (count == 1)
+		print_declare_export(export);
+	else
+		process_export(count, argv, env, export);
+	return (0);
 }

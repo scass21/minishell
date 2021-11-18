@@ -1,21 +1,35 @@
 #include "minishell.h"
 
-static int check_argv(char **argv)
+static int	check_argv(char **argv)
 {
-	int count;
+	int	count;
 
 	count = 0;
-	while(argv[count])
+	while (argv[count])
 		count++;
 	if (count == 1 && ft_strlen(argv[0]) > 4)
 		return (0);
 	return (1);
 }
 
-int		our_echo(char **argv)
+static void	get_echo(char **argv, int i)
 {
-	int		i;
-	int		n;
+	while (argv[i])
+	{
+		if (!ft_strcmp(argv[i], "$?"))
+			printf("%d", g_sh.exit_code);
+		else
+			printf("%s", argv[i]);
+		if (argv[i + 1])
+			printf(" ");
+		i++;
+	}
+}
+
+int	our_echo(char **argv)
+{
+	int	i;
+	int	n;
 
 	i = 1;
 	n = 0;
@@ -31,17 +45,8 @@ int		our_echo(char **argv)
 		n = 1;
 		i++;
 	}
-	while (argv[i])
-	{
-		if (!ft_strcmp(argv[i],"$?"))
-			printf("%d", t_sh.exit_code);
-		else
-			printf("%s", argv[i]);
-		if (argv[i + 1])
-			printf(" ");
-		i++;
-	}
+	get_echo(argv, i);
 	if (!n)
 		printf("\n");
-	return (0);	
+	return (0);
 }

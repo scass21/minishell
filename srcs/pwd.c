@@ -1,11 +1,11 @@
 #include "minishell.h"
 
-static int check_argv(char **argv)
+static int	check_argv(char **argv)
 {
-	int count;
+	int	count;
 
 	count = 0;
-	while(argv[count])
+	while (argv[count])
 		count++;
 	if (count == 1 && ft_strlen(argv[0]) > 3)
 		return (0);
@@ -14,8 +14,8 @@ static int check_argv(char **argv)
 
 int	our_pwd(char **argv)
 {
-	char dir[4096];
-	
+	char	dir[4096];
+
 	errno = 0;
 	if (!check_argv(argv))
 	{
@@ -26,5 +26,5 @@ int	our_pwd(char **argv)
 		printf("%s\n", dir);
 	else
 		print_error(strerror(errno));
-	return 0;
+	return (0);
 }

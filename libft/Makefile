@@ -17,7 +17,7 @@ SRCS	=	ft_putstr.c get_next_line.c ft_struct.c clearing.c\
 			ft_isalpha.c ft_isdigit.c ft_isalnum.c ft_isascii.c ft_isprint.c ft_toupper.c\
 			ft_tolower.c ft_calloc.c ft_strdup.c ft_substr.c ft_strjoin.c \
 			ft_split.c ft_itoa.c ft_strmapi.c ft_putchar_fd.c ft_putstr_fd.c \
-			ft_putendl_fd.c ft_putnbr_fd.c ft_strtrim.c
+			ft_putendl_fd.c ft_putnbr_fd.c 
 OBJS	= 	${SRCS:.c=.o}
 CC		= 	gcc
 NAME	= 	libft.a
